@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   # http: sustituye al fetch de React Native
+  flutter_secure_storage: ^11.2.0
   get: ^4.7.3
   http: ^1.2.0
   # image_picker: sustituye a expo-image-picker (cámara y galería)

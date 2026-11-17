@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user.dart';
@@ -8,9 +9,13 @@ import '../services/auth_service.dart';
 import '../services/http_client.dart';
 
 // Guarda la sesión del usuario (token y datos) y avisa a las pantallas cuando cambia.
-// La sesión se guarda también en el móvil con SharedPreferences, para no tener que
-// hacer login cada vez que se abre la app.
+// La sesión se guarda también en el móvil para no tener que hacer login cada vez que se abre la app:
+// los tokens van en el almacenamiento seguro (Keychain en iOS, Keystore en Android) y los datos
+// del usuario, que no son secretos, en SharedPreferences.
 class AuthProvider extends ChangeNotifier {
+  // Almacenamiento seguro para los tokens
+  final _storage = const FlutterSecureStorage();
+
   User? user;
   String? token;
   String? refreshToken;
@@ -29,12 +34,12 @@ class AuthProvider extends ChangeNotifier {
   // Lee la sesión guardada. Se llama una vez al crear el provider
   Future<void> loadSession() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedToken = prefs.getString('token');
+    final savedToken = await _storage.read(key: 'token');
     final savedUser = prefs.getString('user');
 
     if (savedToken != null && savedUser != null) {
       token = savedToken;
-      refreshToken = prefs.getString('refreshToken');
+      refreshToken = await _storage.read(key: 'refreshToken');
       user = User.fromJson(jsonDecode(savedUser));
     }
 
@@ -56,8 +61,8 @@ class AuthProvider extends ChangeNotifier {
       user = session.user;
 
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('token', session.token);
-      await prefs.setString('refreshToken', session.refreshToken);
+      await _storage.write(key: 'token', value: session.token);
+      await _storage.write(key: 'refreshToken', value: session.refreshToken);
       await prefs.setString('user', jsonEncode(session.user.toJson()));
 
       loading = false;
@@ -111,8 +116,7 @@ class AuthProvider extends ChangeNotifier {
       throw ApiException('La sesión ha caducado, inicia sesión otra vez', 401);
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('token', token!);
+    await _storage.write(key: 'token', value: token);
 
     return request(path, method: method, body: body, token: token);
   }
@@ -125,8 +129,8 @@ class AuthProvider extends ChangeNotifier {
     error = null;
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('refreshToken');
+    await _storage.delete(key: 'token');
+    await _storage.delete(key: 'refreshToken');
     await prefs.remove('user');
 
     notifyListeners();

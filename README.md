@@ -7,9 +7,9 @@ Usa la API de [backend-spotter](https://github.com/SpotterP/backend-spotter).
 ## Qué tiene
 
 - **Registro** (`POST /auth/register`): nombre, email y contraseña (mínimo 8 caracteres). Después hay que iniciar sesión.
-- **Login** (`POST /auth/login`): guarda el token y el usuario en el móvil (`shared_preferences`), así la sesión sigue al cerrar la app.
+- **Login** (`POST /auth/login`): guarda los tokens en el almacenamiento seguro (`flutter_secure_storage`: Keychain en iOS, Keystore en Android) y el usuario en `shared_preferences`, así la sesión sigue al cerrar la app.
 - **Perfil**: nombre, email y rol del usuario, y botón de cerrar sesión.
-- Pantalla principal con barra de abajo: **Inicio** (vacía por ahora) y **Perfil**.
+- Pantalla principal con barra de abajo: **Entrenar**, **Rutinas**, **Calendario**, **Progreso** y **Perfil**. Solo Perfil está hecha; las otras cuatro son un texto hasta que se hagan sus pantallas.
 
 ## Estructura
 
