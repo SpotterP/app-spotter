@@ -4,9 +4,23 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_colors.dart';
 
-// Pantalla de perfil: enseña los datos del usuario y permite cerrar la sesión
-class ProfileScreen extends StatelessWidget {
+// Pantalla de perfil: enseña el nombre y el email del usuario y permite cerrar la sesión.
+// Al abrirla pide los datos a la API (GET /users/me).
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    final auth = context.read<AuthProvider>();
+    // Esperamos a que termine de construirse la pantalla antes de llamar a la API
+    Future.microtask(() => auth.loadProfile());
+  }
 
   // Iniciales del nombre para el círculo del avatar ("Ana Pérez" -> "AP")
   String _initials(String name) {
@@ -29,6 +43,14 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
+          // Barra de carga mientras se piden los datos a la API
+          if (auth.profileLoading) const LinearProgressIndicator(),
+          // Si la API falla seguimos enseñando los datos que teníamos y avisamos del error
+          if (auth.profileError != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Text(auth.profileError!, style: const TextStyle(color: AppColors.danger), textAlign: TextAlign.center),
+            ),
           Center(
             child: CircleAvatar(
               radius: 44,
@@ -45,8 +67,6 @@ class ProfileScreen extends StatelessWidget {
                 ListTile(leading: const Icon(Icons.person_outline), title: const Text('Nombre'), subtitle: Text(user.name)),
                 const Divider(height: 1),
                 ListTile(leading: const Icon(Icons.email_outlined), title: const Text('Email'), subtitle: Text(user.email)),
-                const Divider(height: 1),
-                ListTile(leading: const Icon(Icons.badge_outlined), title: const Text('Rol'), subtitle: Text(user.role)),
               ],
             ),
           ),

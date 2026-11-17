@@ -29,6 +29,10 @@ class AuthProvider extends ChangeNotifier {
   // Mensaje de error de la última acción, para enseñarlo en pantalla
   String? error;
 
+  // Estado de la carga del perfil (GET /users/me)
+  bool profileLoading = false;
+  String? profileError;
+
   bool get isLoggedIn => user != null && token != null;
 
   // Lee la sesión guardada. Se llama una vez al crear el provider
@@ -96,6 +100,32 @@ class AuthProvider extends ChangeNotifier {
     loading = false;
     notifyListeners();
     return false;
+  }
+
+  // Pide el perfil actualizado a la API (GET /users/me) y lo guarda en la sesión.
+  // Mientras tanto la pantalla enseña los datos que ya teníamos del login.
+  Future<void> loadProfile() async {
+    profileLoading = true;
+    profileError = null;
+    notifyListeners();
+
+    try {
+      final data = await authorizedRequest('/users/me');
+
+      // Si mientras tanto se ha cerrado la sesión, no hacemos nada
+      if (user != null) {
+        // La API solo devuelve _id, name y email: el rol lo mantenemos
+        user = User.fromJson({...data['user'], 'role': user!.role});
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user', jsonEncode(user!.toJson()));
+      }
+    } on ApiException catch (e) {
+      profileError = e.message;
+    }
+
+    profileLoading = false;
+    notifyListeners();
   }
 
   // Hace una petición a una ruta protegida con el token de la sesión.
