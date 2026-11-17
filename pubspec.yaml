@@ -1,5 +1,5 @@
-name: ea_seminari9_flutter
-description: Backoffice de autores y libros hecho en Flutter (migrado desde React Native).
+name: app_spotter
+description: App móvil de Spotter, para registrar rutinas y entrenamientos.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -17,6 +17,7 @@ dependencies:
   # permission_handler: para pedir permisos y ver su estado (como usePermissions.ts)
   permission_handler: ^11.3.0
   provider: ^6.1.5+1
+  shared_preferences: ^2.2.0
 
 dev_dependencies:
   flutter_test:

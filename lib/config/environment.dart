@@ -1,10 +1,8 @@
 import 'package:flutter/foundation.dart';
 
-// Igual que environment.ts de React Native:
-// calcula la URL de la API según la plataforma.
+// Calcula la URL de la API (backend-spotter, puerto 1337 por defecto) según la plataforma.
 class Environment {
   // Se puede cambiar al arrancar: flutter run --dart-define=API_URL=http://192.168.1.10:1337
-  // (en React Native era la variable EXPO_PUBLIC_API_URL)
   static const String _envApiUrl = String.fromEnvironment('API_URL');
 
   static String get apiUrl {
