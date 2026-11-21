@@ -21,6 +21,13 @@ class WorkoutService {
     await auth.authorizedRequest('/users/me/workouts/$id', method: 'DELETE');
   }
 
+  // GET /users/me/workouts/:id. Una rutina del usuario con sus ejercicios
+  static Future<Workout> myWorkout(AuthProvider auth, String id) async {
+    final data = await auth.authorizedRequest('/users/me/workouts/$id');
+
+    return Workout.fromJson(data['workout']);
+  }
+
   // GET /exercises. Una página del catálogo de ejercicios, ordenado por nombre.
   // search: texto que tiene que contener el nombre (no distingue mayúsculas). category: solo esa categoría.
   // Devuelve los ejercicios de la página y si hay otra página después de esta.
@@ -45,6 +52,19 @@ class WorkoutService {
     return (
       exercises: (data['exercises'] as List).map((e) => Exercise.fromJson(e)).toList(),
       hasNextPage: data['pagination']['hasNextPage'] == true,
+    );
+  }
+
+  // PUT /users/me/workouts/:id. Guarda el nombre y los ejercicios de la rutina.
+  // El orden de la lista es el orden en que se guardan los ejercicios.
+  static Future<void> updateMyWorkout(AuthProvider auth, String id, String name, List<WorkoutExercise> exercises) async {
+    await auth.authorizedRequest(
+      '/users/me/workouts/$id',
+      method: 'PUT',
+      body: {
+        'name': name,
+        'exercises': exercises.map((e) => {'exercise': e.exercise.id, 'sets': e.sets, 'reps': e.reps}).toList(),
+      },
     );
   }
 }
