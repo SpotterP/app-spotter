@@ -9,7 +9,8 @@ Usa la API de [backend-spotter](https://github.com/SpotterP/backend-spotter).
 - **Registro** (`POST /auth/register`): nombre, email y contraseña (mínimo 8 caracteres). Después hay que iniciar sesión.
 - **Login** (`POST /auth/login`): guarda los tokens en el almacenamiento seguro (`flutter_secure_storage`: Keychain en iOS, Keystore en Android) y el usuario en `shared_preferences`, así la sesión sigue al cerrar la app.
 - **Perfil**: nombre, email y rol del usuario, y botón de cerrar sesión.
-- Pantalla principal con barra de abajo: **Entrenar**, **Rutinas**, **Calendario**, **Progreso** y **Perfil**. Solo Perfil está hecha; las otras cuatro son un texto hasta que se hagan sus pantallas.
+- Pantalla principal con barra de abajo: **Entrenar**, **Rutinas**, **Calendario**, **Progreso** y **Perfil**. Mis rutinas y Perfil están hechas; las otras tres son un texto hasta que se hagan sus pantallas.
+- **Mis rutinas**: lista las rutinas del usuario con su número de ejercicios (`GET /users/me/workouts`), crea una nueva con su nombre (`POST /users/me/workouts`) y borra las que ya no usa, pidiendo confirmación (`DELETE /users/me/workouts/:id`). Al tocar una se abre su edición (de momento provisional).
 
 ## Estructura
 
@@ -17,6 +18,8 @@ Usa la API de [backend-spotter](https://github.com/SpotterP/backend-spotter).
 lib/
   config/environment.dart     URL de la API según la plataforma
   models/user.dart            modelo User (fromJson / toJson)
+  models/workout.dart         modelos Exercise, WorkoutExercise y Workout
+  services/workout_service.dart  rutinas del usuario (rutas protegidas)
   services/http_client.dart   función request() para llamar a la API (con token opcional)
   services/auth_service.dart  login y registro
   providers/auth_provider.dart  estado de la sesión (Provider)

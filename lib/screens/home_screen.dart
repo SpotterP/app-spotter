@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'profile_screen.dart';
+import 'routines_screen.dart';
 
 // Pantalla principal cuando hay sesión. Tiene una barra de abajo con las 5 secciones de la app.
-// Solo Perfil está hecha; las otras cuatro enseñan un texto hasta que se hagan sus pantallas.
+// Rutinas y Perfil están hechas; las otras tres enseñan un texto hasta que se hagan sus pantallas.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -23,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _index,
         children: const [
           Center(child: Text('Aquí podrás entrenar')),
-          Center(child: Text('Aquí irán tus rutinas')),
+          RoutinesScreen(),
           Center(child: Text('Aquí irá el calendario')),
           Center(child: Text('Aquí irá tu progreso')),
           ProfileScreen(),
