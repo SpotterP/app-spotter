@@ -27,9 +27,12 @@ class WorkoutExercise {
 class Workout {
   final String id;
   final String name;
+  // Días de la semana en los que se hace la rutina (para el calendario).
+  // La API los manda en inglés: MONDAY, TUESDAY... SUNDAY
+  final List<String> days;
   final List<WorkoutExercise> exercises;
 
-  Workout({required this.id, required this.name, required this.exercises});
+  Workout({required this.id, required this.name, required this.days, required this.exercises});
 
   // Convierte el JSON de la API en una Workout.
   // Cada ejercicio de la rutina llega con el ejercicio completo dentro (populate).
@@ -40,6 +43,7 @@ class Workout {
     return Workout(
       id: json['_id'] ?? '',
       name: json['name'] ?? '',
+      days: (json['days'] as List? ?? []).map((d) => d.toString()).toList(),
       exercises: items
           .map((item) => WorkoutExercise(
                 exercise: Exercise.fromJson(item['exercise']),

@@ -55,6 +55,17 @@ class WorkoutService {
     );
   }
 
+  // PUT /users/me/workouts/:id. Guarda solo los días de la semana de la rutina.
+  // La API exige el nombre al actualizar, pero los ejercicios son opcionales:
+  // si no se mandan, se quedan como estaban.
+  static Future<void> updateMyWorkoutDays(AuthProvider auth, Workout workout, List<String> days) async {
+    await auth.authorizedRequest(
+      '/users/me/workouts/${workout.id}',
+      method: 'PUT',
+      body: {'name': workout.name, 'days': days},
+    );
+  }
+
   // PUT /users/me/workouts/:id. Guarda el nombre y los ejercicios de la rutina.
   // El orden de la lista es el orden en que se guardan los ejercicios.
   static Future<void> updateMyWorkout(AuthProvider auth, String id, String name, List<WorkoutExercise> exercises) async {
