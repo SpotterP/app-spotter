@@ -7,17 +7,6 @@ import '../services/http_client.dart';
 import '../services/workout_service.dart';
 import '../theme/app_colors.dart';
 
-// Los días de la semana. La API los guarda en inglés (clave) y aquí los enseñamos en español
-const _weekDays = [
-  ('MONDAY', 'Lunes'),
-  ('TUESDAY', 'Martes'),
-  ('WEDNESDAY', 'Miércoles'),
-  ('THURSDAY', 'Jueves'),
-  ('FRIDAY', 'Viernes'),
-  ('SATURDAY', 'Sábado'),
-  ('SUNDAY', 'Domingo'),
-];
-
 // Pestaña "Calendario": enseña la semana con las rutinas de cada día.
 // Se puede asignar una rutina a un día o quitarla. Se guarda en el campo days de la rutina.
 class CalendarScreen extends StatefulWidget {
@@ -114,7 +103,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    for (final (key, label) in _weekDays) _buildDay(key, label, workouts),
+                    for (final (key, label) in weekDays) _buildDay(key, label, workouts),
                   ],
                 ),
     );

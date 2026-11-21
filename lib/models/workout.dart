@@ -1,3 +1,15 @@
+// Los días de la semana, de lunes a domingo. La API los guarda en inglés (la clave) y la app los
+// enseña en español. Los usan el calendario y la pantalla de entrenar.
+const weekDays = [
+  ('MONDAY', 'Lunes'),
+  ('TUESDAY', 'Martes'),
+  ('WEDNESDAY', 'Miércoles'),
+  ('THURSDAY', 'Jueves'),
+  ('FRIDAY', 'Viernes'),
+  ('SATURDAY', 'Sábado'),
+  ('SUNDAY', 'Domingo'),
+];
+
 // Un ejercicio del catálogo (lo que devuelve GET /exercises)
 class Exercise {
   final String id;
