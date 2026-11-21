@@ -2,12 +2,14 @@
 class Exercise {
   final String id;
   final String name;
+  // Categoría en inglés: CHEST, BACK, LEGS, SHOULDERS, ARMS, CORE o CARDIO
+  final String category;
 
-  Exercise({required this.id, required this.name});
+  Exercise({required this.id, required this.name, this.category = ''});
 
   // La API manda el id como "_id"
   factory Exercise.fromJson(Map<String, dynamic> json) {
-    return Exercise(id: json['_id'] ?? '', name: json['name'] ?? '');
+    return Exercise(id: json['_id'] ?? '', name: json['name'] ?? '', category: json['category'] ?? '');
   }
 }
 
