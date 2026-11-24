@@ -5,6 +5,7 @@ import '../models/progress.dart';
 import '../providers/auth_provider.dart';
 import '../services/http_client.dart';
 import '../services/progress_service.dart';
+import '../services/socket_service.dart';
 import '../theme/app_colors.dart';
 import 'session_detail_screen.dart';
 
@@ -24,10 +25,33 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Map<String, String> _workoutNames = {};
   String? _error;
 
+  // Conexión en tiempo real: avisa cuando se guarda un entrenamiento nuevo
+  final _socket = SocketService();
+
   @override
   void initState() {
     super.initState();
-    _load();
+    _startRealtime();
+  }
+
+  @override
+  void dispose() {
+    // Al cerrar sesión se quita la pantalla principal y con ella esta pantalla: cerramos la conexión
+    _socket.disconnect();
+    super.dispose();
+  }
+
+  // Carga los datos y despues abre la conexion en tiempo real.
+  // Esperamos a la primera carga porque si el token habia caducado, aqui se renueva
+  // y asi el socket se conecta ya con un token que vale.
+  Future<void> _startRealtime() async {
+    final auth = context.read<AuthProvider>();
+
+    await _load();
+    if (!mounted) return;
+
+    // Cuando llega un entrenamiento nuevo, volvemos a pedir el resumen y la lista
+    _socket.connect(() => auth.token, _load);
   }
 
   // Pide el resumen, los entrenamientos y los nombres de las rutinas a la vez
