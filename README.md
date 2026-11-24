@@ -46,6 +46,19 @@ Usuario de prueba del seed del backend: `user@example.com` / `seminari7`.
 
 Para otra URL de la API: `flutter run --dart-define=API_URL=http://192.168.1.10:1337`
 
+## Linter y hook de Git
+
+El linter es el de Dart: `flutter analyze` (con las reglas de `flutter_lints`, en `analysis_options.yaml`).
+
+Hay un hook de Git (`.githooks/pre-commit`) que lo pasa antes de cada `git commit` y cancela el commit si encuentra problemas.
+Como esta app no usa npm, el hook se activa una sola vez en cada clon:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Se puede saltar una vez con `git commit --no-verify`, pero lo normal es arreglar el aviso.
+
 ## Token
 
 El access token del backend dura 15 minutos. Las pantallas que llamen a rutas protegidas tienen que usar `AuthProvider.authorizedRequest()`: si la API responde 401, pide un token nuevo con `POST /auth/refresh` y repite la petición; si el refresh token también ha caducado, cierra la sesión y la app vuelve al login.

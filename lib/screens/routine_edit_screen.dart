@@ -142,6 +142,9 @@ class _RoutineEditScreenState extends State<RoutineEditScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   buildDefaultDragHandles: false,
+                  // onReorder está marcado como obsoleto en las versiones más nuevas de Flutter (se sustituye por
+                  // onReorderItem), pero onReorderItem no existe en las anteriores y la app no compilaría en ellas
+                  // ignore: deprecated_member_use
                   onReorder: _reorder,
                   children: [
                     for (var i = 0; i < _rows.length; i++) _buildRow(i),
