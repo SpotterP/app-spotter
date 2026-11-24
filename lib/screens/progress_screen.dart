@@ -204,8 +204,14 @@ class _ProgressScreenState extends State<ProgressScreen> {
     );
   }
 
-  // El resumen: número de entrenamientos, días entrenados y ejercicios hechos
+  // El resumen: número de entrenamientos, días entrenados y ejercicios hechos.
+  // El total y los ejercicios vienen tal cual de GET /users/me/progress; los días entrenados
+  // se calculan en local con las sesiones ya cargadas, para que el calendario y la lista de
+  // abajo digan el mismo día (el backend los agrupa en UTC y una sesión de noche se iba al día
+  // anterior). Si hay más páginas sin cargar, los días son los del historial cargado.
   Widget _buildSummary(Progress progress) {
+    final trainedDays = localTrainedDays(_sessions);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -217,11 +223,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
             const SizedBox(height: 16),
             const Text('Días que has entrenado', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            if (progress.trainedDays.isEmpty) const Text('Ninguno todavía'),
+            if (trainedDays.isEmpty) const Text('Ninguno todavía'),
             Wrap(
               spacing: 8,
               runSpacing: 4,
-              children: [for (final day in progress.trainedDays) Chip(label: Text(formatDay(day)))],
+              children: [for (final day in trainedDays) Chip(label: Text(formatDay(day)))],
             ),
             const SizedBox(height: 16),
             const Text('Ejercicios que has hecho', style: TextStyle(fontWeight: FontWeight.bold)),

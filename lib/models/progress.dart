@@ -120,6 +120,33 @@ class SessionsPage {
 // Enseña una fecha como día/mes/año ("5/3/2026")
 String formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
 
+// Un día como texto AAAA-MM-DD. Es el mismo formato que manda la API en trainedDays,
+// así los días calculados aquí se pintan con formatDay igual que los del resumen.
+String localDay(DateTime date) =>
+    '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+// Días entrenados calculados en hora LOCAL a partir de los entrenamientos ya cargados.
+//
+// De dónde sale cada número (esto es lo que arregla que el calendario y la lista cuadren):
+// - El número de entrenamientos y los ejercicios hechos vienen del resumen de
+//   GET /users/me/progress (Progress.totalSessions y Progress.exercises): la app no los recalcula.
+// - Los días entrenados se calculan AQUÍ, en local, porque el backend los agrupa en UTC
+//   (toISOString().slice(0, 10)) y una sesión de después de cenar caería en el día anterior.
+//   Así el día que sale en el calendario es el mismo que se ve en la lista de entrenamientos.
+// Ojo: depende de que el historial esté completo, porque solo cuenta lo que se ha cargado.
+//
+// Los días salen ordenados del más antiguo al más reciente y sin repetir, como los del backend.
+List<String> localTrainedDays(Iterable<TrainingSession> sessions) {
+  final days = <String>{};
+
+  for (final session in sessions) {
+    // toLocal() no sobra: deja el día bien aunque la sesión se haya creado con un instante UTC
+    days.add(localDay(session.startedAt.toLocal()));
+  }
+
+  return days.toList()..sort();
+}
+
 // Convierte un día de la API ("2026-03-05") a día/mes/año ("5/3/2026")
 String formatDay(String day) {
   final parts = day.split('-');
