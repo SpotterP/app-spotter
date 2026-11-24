@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_colors.dart';
+import '../utils/initials.dart';
 
 // Pantalla de perfil: enseña el nombre y el email del usuario y permite cerrar la sesión.
 // Al abrirla pide los datos a la API (GET /users/me).
@@ -21,14 +22,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final auth = context.read<AuthProvider>();
     // Esperamos a que termine de construirse la pantalla antes de llamar a la API
     Future.microtask(() => auth.loadProfile());
-  }
-
-  // Iniciales del nombre para el círculo del avatar ("Ana Pérez" -> "AP")
-  String _initials(String name) {
-    final words = name.trim().split(' ').where((w) => w.isNotEmpty).toList();
-    if (words.isEmpty) return '?';
-    if (words.length == 1) return words[0][0].toUpperCase();
-    return (words[0][0] + words[1][0]).toUpperCase();
   }
 
   @override
@@ -58,7 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // Estos colores salen del tema, así se ven bien tanto en claro como en oscuro
               backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               child: Text(
-                _initials(user.name),
+                initialsOf(user.name),
                 style: TextStyle(fontSize: 28, color: Theme.of(context).colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold),
               ),
             ),
