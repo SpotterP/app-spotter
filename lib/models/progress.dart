@@ -74,6 +74,49 @@ class TrainingSession {
   }
 }
 
+// Una página de entrenamientos, con el bloque "pagination" que manda la API
+// (page, limit, total, totalPages, hasNextPage, hasPrevPage).
+class SessionsPage {
+  final List<TrainingSession> sessions;
+  // La página que ha devuelto el backend (empieza en 1)
+  final int page;
+  final int limit;
+  final int total;
+  final int totalPages;
+  final bool hasNextPage;
+
+  SessionsPage({
+    required this.sessions,
+    required this.page,
+    required this.limit,
+    required this.total,
+    required this.totalPages,
+    required this.hasNextPage,
+  });
+
+  // La página que hay que pedir después, o null si el backend dice que no hay más.
+  // Sale del "page" que devuelve el backend, no de un contador propio que se pueda desincronizar.
+  int? get nextPage => hasNextPage ? page + 1 : null;
+
+  factory SessionsPage.fromJson(Map<String, dynamic> json) {
+    final pagination = (json['pagination'] as Map?) ?? const {};
+    final page = (pagination['page'] as num?)?.toInt() ?? 1;
+    final limit = (pagination['limit'] as num?)?.toInt() ?? 0;
+    final total = (pagination['total'] as num?)?.toInt() ?? 0;
+
+    return SessionsPage(
+      sessions: (json['sessions'] as List? ?? []).map((s) => TrainingSession.fromJson(s)).toList(),
+      page: page,
+      limit: limit,
+      total: total,
+      totalPages: (pagination['totalPages'] as num?)?.toInt() ?? page,
+      // Si el backend no manda la paginación, damos la página por última: mejor quedarse corto
+      // que pedir páginas para siempre
+      hasNextPage: pagination['hasNextPage'] as bool? ?? false,
+    );
+  }
+}
+
 // Enseña una fecha como día/mes/año ("5/3/2026")
 String formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
 
