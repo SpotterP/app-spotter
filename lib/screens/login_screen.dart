@@ -48,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const Icon(Icons.fitness_center, size: 64, color: AppColors.primary),
                   const SizedBox(height: 8),
-                  const Text('Spotter', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.text)),
+                  const Text('Spotter', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 32),
                   TextFormField(
                     controller: _emailController,

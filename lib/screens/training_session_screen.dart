@@ -180,7 +180,10 @@ class _ExerciseCardState extends State<_ExerciseCard> {
           children: [
             Text(exercise.exercise.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             if (exercise.plannedSets != null)
-              Text('Previsto: ${exercise.plannedSets} series de ${exercise.plannedReps}', style: const TextStyle(color: AppColors.textMuted)),
+              Text(
+                'Previsto: ${exercise.plannedSets} series de ${exercise.plannedReps}',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
             const SizedBox(height: 8),
             // Las series ya apuntadas, cada una con un botón para quitarla
             for (var i = 0; i < exercise.sets.length; i++)

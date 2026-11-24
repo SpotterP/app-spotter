@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 import '../theme/app_colors.dart';
 
 // Pantalla de perfil: enseña el nombre y el email del usuario y permite cerrar la sesión.
@@ -54,12 +55,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Center(
             child: CircleAvatar(
               radius: 44,
-              backgroundColor: AppColors.primaryLight,
-              child: Text(_initials(user.name), style: const TextStyle(fontSize: 28, color: AppColors.primary, fontWeight: FontWeight.bold)),
+              // Estos colores salen del tema, así se ven bien tanto en claro como en oscuro
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              child: Text(
+                _initials(user.name),
+                style: TextStyle(fontSize: 28, color: Theme.of(context).colorScheme.onPrimaryContainer, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
           const SizedBox(height: 16),
-          Center(child: Text(user.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.text))),
+          // Sin color propio: el texto toma el color del tema (oscuro en claro y claro en oscuro)
+          Center(child: Text(user.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold))),
           const SizedBox(height: 24),
           Card(
             child: Column(
@@ -68,6 +74,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const Divider(height: 1),
                 ListTile(leading: const Icon(Icons.email_outlined), title: const Text('Email'), subtitle: Text(user.email)),
               ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Elegir el tema de la app: claro, oscuro o el mismo que tenga el móvil
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Tema', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  SegmentedButton<ThemeMode>(
+                    segments: const [
+                      ButtonSegment(value: ThemeMode.light, label: Text('Claro')),
+                      ButtonSegment(value: ThemeMode.dark, label: Text('Oscuro')),
+                      ButtonSegment(value: ThemeMode.system, label: Text('Sistema')),
+                    ],
+                    selected: {context.watch<ThemeProvider>().mode},
+                    onSelectionChanged: (selection) => context.read<ThemeProvider>().setMode(selection.first),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 24),

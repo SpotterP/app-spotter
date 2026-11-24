@@ -126,7 +126,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 spacing: 8,
                 runSpacing: 4,
                 children: [
-                  if (ofDay.isEmpty) const Text('Sin rutina', style: TextStyle(color: AppColors.textMuted)),
+                  // El gris del texto apagado sale del tema para que se vea bien en claro y en oscuro
+                  if (ofDay.isEmpty) Text('Sin rutina', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   for (final workout in ofDay)
                     InputChip(label: Text(workout.name), onDeleted: () => _remove(day, workout)),
                 ],
