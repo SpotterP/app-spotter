@@ -131,7 +131,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('${progress.totalSessions}', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold)),
-            const Text('entrenamientos', style: TextStyle(color: AppColors.textMuted)),
+            Text('entrenamientos', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 16),
             const Text('Días que has entrenado', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),

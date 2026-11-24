@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -18,24 +19,38 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ChangeNotifierProvider deja el AuthProvider disponible para toda la app.
-    // Los ".." llaman a loadSession nada más crearlo, para leer la sesión guardada.
-    return ChangeNotifierProvider(
-      create: (_) => AuthProvider()..loadSession(),
-      // GetMaterialApp = MaterialApp de GetX. Añade las rutas con nombre
-      child: GetMaterialApp(
-        title: 'Spotter',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: AppColors.primary,
-          scaffoldBackgroundColor: AppColors.background,
+    // MultiProvider deja disponibles para toda la app el AuthProvider (la sesión) y el ThemeProvider
+    // (el tema elegido). Los ".." llaman a loadSession y loadTheme nada más crearlos, para leer
+    // lo que se guardó la última vez.
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()..loadSession()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()..loadTheme()),
+      ],
+      // Consumer vuelve a pintar la app cada vez que el usuario cambia de tema
+      child: Consumer<ThemeProvider>(
+        // GetMaterialApp = MaterialApp de GetX. Añade las rutas con nombre
+        builder: (_, themeProvider, __) => GetMaterialApp(
+          title: 'Spotter',
+          debugShowCheckedModeBanner: false,
+          // Tema claro y tema oscuro. themeMode dice cuál se usa: el elegido o el del móvil
+          theme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: AppColors.primary,
+            scaffoldBackgroundColor: AppColors.background,
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: AppColors.primary,
+            brightness: Brightness.dark,
+          ),
+          themeMode: themeProvider.mode,
+          // Pantalla de inicio: depende de si hay sesión o no
+          home: const AuthGate(),
+          getPages: [
+            GetPage(name: '/register', page: () => const RegisterScreen()),
+          ],
         ),
-        // Pantalla de inicio: depende de si hay sesión o no
-        home: const AuthGate(),
-        getPages: [
-          GetPage(name: '/register', page: () => const RegisterScreen()),
-        ],
       ),
     );
   }
