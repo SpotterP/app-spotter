@@ -25,9 +25,9 @@ void main() {
       httpRequest: (path, {method = 'GET', body, token}) async {
         called.add('$method $path');
         sentToken = token;
-        // GET /users/me devuelve sólo _id, name y email
+        // GET /users/me devuelve el perfil completo, rol incluido
         return {
-          'user': {'_id': 'u1', 'name': 'Ana Nueva', 'email': 'nueva@example.com'},
+          'user': {'_id': 'u1', 'name': 'Ana Nueva', 'email': 'nueva@example.com', 'role': 'ADMIN'},
         };
       },
     );
@@ -42,8 +42,8 @@ void main() {
     // Y enseña lo que ha devuelto
     expect(auth.user!.name, 'Ana Nueva');
     expect(auth.user!.email, 'nueva@example.com');
-    // El rol no viene en la respuesta del perfil: se conserva el del login
-    expect(auth.user!.role, 'USER');
+    // El rol sale de la respuesta del perfil y manda sobre el que se guardó en el login
+    expect(auth.user!.role, 'ADMIN');
     expect(auth.profileError, isNull);
     expect(auth.profileLoading, isFalse);
 
@@ -52,7 +52,7 @@ void main() {
     final saved = jsonDecode(prefs.getString('user')!);
     expect(saved['name'], 'Ana Nueva');
     expect(saved['email'], 'nueva@example.com');
-    expect(saved['role'], 'USER');
+    expect(saved['role'], 'ADMIN');
   });
 
   test('si la API falla se avisa y se dejan los datos que ya estaban', () async {
