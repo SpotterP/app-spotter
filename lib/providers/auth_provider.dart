@@ -8,11 +8,25 @@ import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/http_client.dart';
 
+// Función para hablar con la API. Por defecto es la de verdad (http_client.dart);
+// los tests inyectan una falsa para no salir a la red.
+typedef ApiRequest = Future<dynamic> Function(
+  String path, {
+  String method,
+  Map<String, dynamic>? body,
+  String? token,
+});
+
 // Guarda la sesión del usuario (token y datos) y avisa a las pantallas cuando cambia.
 // La sesión se guarda también en el móvil para no tener que hacer login cada vez que se abre la app:
 // los tokens van en el almacenamiento seguro (Keychain en iOS, Keystore en Android) y los datos
 // del usuario, que no son secretos, en SharedPreferences.
 class AuthProvider extends ChangeNotifier {
+  // Sin argumentos usa la API de verdad; los tests le pasan su propia función
+  AuthProvider({ApiRequest? httpRequest}) : _httpRequest = httpRequest ?? request;
+
+  final ApiRequest _httpRequest;
+
   // Almacenamiento seguro para los tokens
   final _storage = const FlutterSecureStorage();
 
@@ -134,7 +148,7 @@ class AuthProvider extends ChangeNotifier {
   // la sesión ha caducado y se cierra (la app vuelve al login).
   Future<dynamic> authorizedRequest(String path, {String method = 'GET', Map<String, dynamic>? body}) async {
     try {
-      return await request(path, method: method, body: body, token: token);
+      return await _httpRequest(path, method: method, body: body, token: token);
     } on ApiException catch (e) {
       if (e.status != 401 || refreshToken == null) rethrow;
     }
@@ -148,7 +162,7 @@ class AuthProvider extends ChangeNotifier {
 
     await _storage.write(key: 'token', value: token);
 
-    return request(path, method: method, body: body, token: token);
+    return _httpRequest(path, method: method, body: body, token: token);
   }
 
   // Cierra la sesión: borra los datos guardados
