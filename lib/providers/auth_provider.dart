@@ -47,15 +47,21 @@ class AuthProvider extends ChangeNotifier {
     final savedUser = prefs.getString('user');
 
     if (savedToken != null && savedUser != null) {
-      final savedAccount = User.fromJson(jsonDecode(savedUser));
+      try {
+        final savedAccount = User.fromJson(jsonDecode(savedUser));
 
-      // Una sesión de administrador guardada antes de que existiera esta regla (o guardada a mano)
-      // tampoco puede entrar: se borra aquí, que es donde se decide si la app arranca dentro o no.
-      if (savedAccount.canUseApp) {
-        token = savedToken;
-        refreshToken = await _storage.read(key: 'refreshToken');
-        user = savedAccount;
-      } else {
+        // Una sesión de administrador guardada antes de que existiera esta regla (o guardada a mano)
+        // tampoco puede entrar: se borra aquí, que es donde se decide si la app arranca dentro o no.
+        if (savedAccount.canUseApp) {
+          token = savedToken;
+          refreshToken = await _storage.read(key: 'refreshToken');
+          user = savedAccount;
+        } else {
+          await _clearSession();
+        }
+      } on FormatException {
+        // Lo guardado no tiene lo que la app necesita (una versión anterior, o tocado a mano):
+        // se empieza de cero en vez de dejar el arranque colgado mirando la sesión a medias
         await _clearSession();
       }
     }
@@ -108,6 +114,9 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } on ApiException catch (e) {
       error = e.message;
+    } on FormatException catch (e) {
+      // La API ha contestado sin algún campo del usuario: se avisa con el campo por su nombre
+      error = e.message.toString();
     }
 
     loading = false;
@@ -157,6 +166,9 @@ class AuthProvider extends ChangeNotifier {
       }
     } on ApiException catch (e) {
       profileError = e.message;
+    } on FormatException catch (e) {
+      // El perfil no se puede refrescar, pero la sesión y lo que ya se veían no se tocan
+      profileError = e.message.toString();
     }
 
     profileLoading = false;
