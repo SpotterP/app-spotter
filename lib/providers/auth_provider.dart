@@ -8,15 +8,6 @@ import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/http_client.dart';
 
-// Función para hablar con la API. Por defecto es la de verdad (http_client.dart);
-// los tests inyectan una falsa para no salir a la red.
-typedef ApiRequest = Future<dynamic> Function(
-  String path, {
-  String method,
-  Map<String, dynamic>? body,
-  String? token,
-});
-
 // Guarda la sesión del usuario (token y datos) y avisa a las pantallas cuando cambia.
 // La sesión se guarda también en el móvil para no tener que hacer login cada vez que se abre la app:
 // los tokens van en el almacenamiento seguro (Keychain en iOS, Keystore en Android) y los datos
@@ -154,9 +145,12 @@ class AuthProvider extends ChangeNotifier {
     }
 
     try {
-      token = await AuthService.refresh(refreshToken!);
+      token = await AuthService.refresh(refreshToken!, httpRequest: _httpRequest);
     } on ApiException {
-      await logout();
+      // No se pudo renovar el token (caducado, revocado o sin conexión): damos la sesión por
+      // perdida y la borramos del móvil. No se avisa al servidor porque no tenemos ningún
+      // token que vaya a aceptar.
+      await _clearSession();
       throw ApiException('La sesión ha caducado, inicia sesión otra vez', 401);
     }
 
@@ -165,8 +159,49 @@ class AuthProvider extends ChangeNotifier {
     return _httpRequest(path, method: method, body: body, token: token);
   }
 
-  // Cierra la sesión: borra los datos guardados
+  // Cuánto esperamos al servidor para cerrar la sesión. Pasado ese tiempo cerramos igual:
+  // nadie se queda dentro de la app esperando a una red que no responde.
+  static const _logoutTimeout = Duration(seconds: 2);
+
+  // Cierra la sesión en el móvil y avisa al servidor para que los tokens dejen de servir.
+  // El aviso es lo segundo: primero la sesión se cierra aquí, así que un fallo de red (o un
+  // backend que todavía no tiene el endpoint) no puede dejar a nadie atrapado dentro de la app.
   Future<void> logout() async {
+    final currentToken = token;
+    final currentRefreshToken = refreshToken;
+
+    // Primero en el móvil: la app vuelve al login al instante, sin esperar a la red
+    await _clearSession();
+
+    if (currentToken == null) return;
+
+    try {
+      // Después, con los tokens que teníamos guardados, pedimos al servidor que los invalide:
+      // sube la versión de tokens del usuario, así que mueren al instante y la sesión se cierra
+      // también en sus otros dispositivos.
+      // Da igual cómo falle (sin red, sin endpoint, tokens caducados, o una respuesta que no
+      // es JSON): la sesión ya está cerrada aquí, así que no hay nada que hacer.
+      await _logoutOnServer(currentToken, currentRefreshToken).timeout(_logoutTimeout);
+    } catch (_) {
+      // Sin aviso al servidor, pero el usuario está fuera
+    }
+  }
+
+  // POST /auth/logout. Si el access token había caducado lo renovamos antes, porque el servidor
+  // sólo cierra la sesión de quien le demuestra que el token es suyo.
+  Future<void> _logoutOnServer(String accessToken, String? refreshToken) async {
+    try {
+      await AuthService.logout(accessToken, httpRequest: _httpRequest);
+    } on ApiException catch (e) {
+      if (e.status != 401 || refreshToken == null) rethrow;
+
+      final fresh = await AuthService.refresh(refreshToken, httpRequest: _httpRequest);
+      await AuthService.logout(fresh, httpRequest: _httpRequest);
+    }
+  }
+
+  // Borra la sesión del móvil y avisa a las pantallas (la app vuelve al login)
+  Future<void> _clearSession() async {
     user = null;
     token = null;
     refreshToken = null;
