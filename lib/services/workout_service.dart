@@ -1,7 +1,8 @@
+import '../models/training.dart';
 import '../models/workout.dart';
 import '../providers/auth_provider.dart';
 
-// Llamadas a la API de rutinas y ejercicios.
+// Llamadas a la API de rutinas, ejercicios y entrenamientos.
 // Son rutas protegidas, así que usan auth.authorizedRequest (manda el token y lo renueva si caduca).
 class WorkoutService {
   // GET /users/me/workouts. Las rutinas del usuario
@@ -75,6 +76,35 @@ class WorkoutService {
       body: {
         'name': name,
         'exercises': exercises.map((e) => {'exercise': e.exercise.id, 'sets': e.sets, 'reps': e.reps}).toList(),
+      },
+    );
+  }
+
+  // POST /users/me/sessions. Guarda un entrenamiento terminado.
+  // workoutId es la rutina que se hizo; se omite si el entrenamiento se empezó de cero.
+  // El fin del entrenamiento es el momento en que se llama a esta función.
+  // Solo mandamos los ejercicios en los que se ha apuntado alguna serie.
+  static Future<void> saveSession(
+    AuthProvider auth, {
+    String? workoutId,
+    required DateTime startedAt,
+    required List<ActiveExercise> exercises,
+  }) async {
+    await auth.authorizedRequest(
+      '/users/me/sessions',
+      method: 'POST',
+      body: {
+        if (workoutId != null) 'workout': workoutId,
+        'startedAt': startedAt.toUtc().toIso8601String(),
+        'finishedAt': DateTime.now().toUtc().toIso8601String(),
+        'exercises': [
+          for (final e in exercises)
+            if (e.sets.isNotEmpty)
+              {
+                'exercise': e.exercise.id,
+                'sets': [for (final s in e.sets) {'reps': s.reps, 'weight': s.weight}],
+              },
+        ],
       },
     );
   }
