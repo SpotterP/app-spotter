@@ -9,7 +9,10 @@ Usa la API de [backend-spotter](https://github.com/SpotterP/backend-spotter).
 - **Registro** (`POST /auth/register`): nombre, email y contraseña (mínimo 8 caracteres). Después hay que iniciar sesión.
 - **Login** (`POST /auth/login`): guarda los tokens en el almacenamiento seguro (`flutter_secure_storage`: Keychain en iOS, Keystore en Android) y el usuario en `shared_preferences`, así la sesión sigue al cerrar la app.
 - **Perfil**: nombre, email y rol del usuario, y botón de cerrar sesión.
-- Pantalla principal con barra de abajo: **Entrenar**, **Rutinas**, **Calendario**, **Progreso** y **Perfil**. Solo Perfil está hecha; las otras cuatro son un texto hasta que se hagan sus pantallas.
+- Pantalla principal con barra de abajo: **Entrenar**, **Rutinas**, **Calendario**, **Progreso** y **Perfil**. Rutinas y Perfil están hechas; las otras tres son un texto hasta que se hagan sus pantallas.
+- **Mis rutinas**: lista las rutinas del usuario con su número de ejercicios (`GET /users/me/workouts`), crea una nueva con su nombre (`POST /users/me/workouts`) y borra las que ya no usa, pidiendo confirmación (`DELETE /users/me/workouts/:id`). Al tocar una se abre para **editarla**: cambiar el nombre, añadir ejercicios con el selector, elegir series y repeticiones, cambiar el orden arrastrando, quitar ejercicios y guardar (`PUT /users/me/workouts/:id`).
+- **Entrenar**: el botón de play propone las rutinas asignadas al día de hoy en el calendario y deja elegir otra rutina o empezar un entrenamiento vacío. En el entrenamiento se ven los ejercicios con lo previsto, se apuntan las series (repeticiones y peso), se pueden añadir ejercicios con el selector y, al finalizar, se guarda (`POST /users/me/sessions`). Cancelar pide confirmación y descarta el entrenamiento.
+- **Selector de ejercicios** (`ExercisePickerScreen`): elige un ejercicio del catálogo (`GET /exercises`) con buscador por nombre, filtro por categoría y carga de más ejercicios al llegar al final de la lista. Es solo de lectura y se abre desde la edición de una rutina (y, más adelante, desde un entrenamiento).
 
 ## Estructura
 
@@ -17,6 +20,8 @@ Usa la API de [backend-spotter](https://github.com/SpotterP/backend-spotter).
 lib/
   config/environment.dart     URL de la API según la plataforma
   models/user.dart            modelo User (fromJson / toJson)
+  models/workout.dart         modelos Exercise, WorkoutExercise y Workout
+  services/workout_service.dart  rutinas y ejercicios (rutas protegidas)
   services/http_client.dart   función request() para llamar a la API (con token opcional)
   services/auth_service.dart  login y registro
   providers/auth_provider.dart  estado de la sesión (Provider)
