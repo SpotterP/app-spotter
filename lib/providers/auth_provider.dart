@@ -148,8 +148,9 @@ class AuthProvider extends ChangeNotifier {
 
       // Si mientras tanto se ha cerrado la sesión, no hacemos nada
       if (user != null) {
-        // La API solo devuelve _id, name y email: el rol lo mantenemos
-        user = User.fromJson({...data['user'], 'role': user!.role});
+        // El perfil viene con su rol desde el servidor (GET /users/me), así que lo que llega
+        // es lo que vale: no se re-mezcla el rol que se guardó en el login.
+        user = User.fromJson(data['user']);
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user', jsonEncode(user!.toJson()));

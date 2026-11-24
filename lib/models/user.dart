@@ -19,6 +19,9 @@ class User {
       id: json['_id'] ?? '',
       name: json['name'] ?? '',
       email: json['email'] ?? '',
+      // El servidor manda el rol (POST /auth/login y GET /users/me). El 'USER' de aquí es
+      // sólo una red de seguridad para una respuesta antigua o recortada: cuando la API
+      // trae el rol, es el que se usa.
       role: json['role'] ?? 'USER',
     );
   }
