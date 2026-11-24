@@ -14,16 +14,25 @@ class User {
   bool get canUseApp => role == 'USER';
 
   // Convierte el JSON de la API en un User. La API manda el id como "_id"
+  //
+  // id, name y email son obligatorios: si la API deja de mandar uno, es mejor decirlo aquí, con
+  // el campo por su nombre, que pintar un hueco en el perfil o inventarse un rol. En cambio el
+  // rol es opcional: GET /users/me lo manda, y si un día no viene se queda el de siempre.
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['_id'] ?? '',
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      // El servidor manda el rol (POST /auth/login y GET /users/me). El 'USER' de aquí es
-      // sólo una red de seguridad para una respuesta antigua o recortada: cuando la API
-      // trae el rol, es el que se usa.
-      role: json['role'] ?? 'USER',
+      id: _campoObligatorio(json, '_id'),
+      name: _campoObligatorio(json, 'name'),
+      email: _campoObligatorio(json, 'email'),
+      role: json['role'] is String ? json['role'] as String : 'USER',
     );
+  }
+
+  // Un campo de texto que la API tiene que mandar sí o sí
+  static String _campoObligatorio(Map<String, dynamic> json, String campo) {
+    final valor = json[campo];
+    if (valor is String && valor.isNotEmpty) return valor;
+
+    throw FormatException('La respuesta de la API no trae el campo obligatorio "$campo" del usuario');
   }
 
   // Convierte el User a JSON (lo usamos para guardarlo en el móvil)
