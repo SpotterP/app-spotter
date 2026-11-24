@@ -162,30 +162,90 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // La renovación en curso, si la hay. La app puede tener varias peticiones en el aire cuando
+  // caduca el token: todas esperan esta misma renovación en vez de pedir cada una la suya.
+  Future<String>? _renewal;
+
   // Hace una petición a una ruta protegida con el token de la sesión.
   // El access token del backend dura 15 minutos: si la API responde 401, pedimos uno nuevo
   // con el refresh token y repetimos la petición una vez. Si tampoco se puede renovar,
   // la sesión ha caducado y se cierra (la app vuelve al login).
   Future<dynamic> authorizedRequest(String path, {String method = 'GET', Map<String, dynamic>? body}) async {
-    try {
-      return await _httpRequest(path, method: method, body: body, token: token);
-    } on ApiException catch (e) {
-      if (e.status != 401 || refreshToken == null) rethrow;
-    }
+    // El token con el que sale esta petición, para saber luego si sigue siendo el de la sesión
+    final sentToken = token;
 
     try {
-      token = await AuthService.refresh(refreshToken!, httpRequest: _httpRequest);
-    } on ApiException {
-      // No se pudo renovar el token (caducado, revocado o sin conexión): damos la sesión por
-      // perdida y la borramos del móvil. No se avisa al servidor porque no tenemos ningún
-      // token que vaya a aceptar.
-      await _clearSession();
+      return await _httpRequest(path, method: method, body: body, token: sentToken);
+    } on ApiException catch (e) {
+      if (e.status != 401 || refreshToken == null) rethrow;
+
+      // Si el token ya ha cambiado, otra petición lo ha renovado mientras ésta iba de camino:
+      // su 401 habla del token viejo, así que basta con reintentar con el que hay ahora.
+      // Pedir aquí otra renovación sería el segundo /auth/refresh que este arreglo evita, y
+      // el día que el backend rote el refresh token la primera renovación dejaría sin valer
+      // el que mandaría esta, y se cerraría la sesión sin motivo.
+      if (token != sentToken) {
+        return _httpRequest(path, method: method, body: body, token: token);
+      }
+    }
+
+    final fresh = await _renewToken();
+
+    return _httpRequest(path, method: method, body: body, token: fresh);
+  }
+
+  // Renueva el token una sola vez aunque la pidan varias peticiones a la vez: la primera
+  // arranca la llamada y las demás se enganchan a la misma.
+  Future<String> _renewToken() {
+    final inFlight = _renewal;
+    if (inFlight != null) return inFlight;
+
+    // Se guarda antes de esperar nada, para que la siguiente petición que llegue lo encuentre
+    final renewal = _renew();
+    _renewal = renewal;
+
+    // Se suelta al terminar, salga bien o mal: si se quedara guardado, la próxima caducidad
+    // reutilizaría el resultado de la anterior en vez de volver a renovar.
+    renewal.then<void>((_) {}, onError: (Object _) {}).whenComplete(() {
+      if (identical(_renewal, renewal)) _renewal = null;
+    });
+
+    return renewal;
+  }
+
+  // POST /auth/refresh. Va con la petición de siempre y no con authorizedRequest(), así que
+  // la renovación no puede acabar esperándose a sí misma.
+  Future<String> _renew() async {
+    final currentRefreshToken = refreshToken;
+
+    // La sesión se ha cerrado mientras esta petición llegaba (un logout, por ejemplo): no hay
+    // nada que renovar y lo que ya está cerrado no se vuelve a cerrar.
+    if (currentRefreshToken == null) {
       throw ApiException('La sesión ha caducado, inicia sesión otra vez', 401);
     }
 
-    await _storage.write(key: 'token', value: token);
+    try {
+      final fresh = await AuthService.refresh(currentRefreshToken, httpRequest: _httpRequest);
 
-    return _httpRequest(path, method: method, body: body, token: token);
+      // La sesión cambió mientras se renovaba (un logout, o un logout y un login nuevo). El token
+      // nuevo no pertenece a la sesión que hay ahora: se descarta y no se escribe en el móvil, para
+      // que un logout no deje un token guardado como si la sesión siguiera abierta.
+      if (refreshToken != currentRefreshToken) {
+        throw ApiException('La sesión ha caducado, inicia sesión otra vez', 401);
+      }
+
+      token = fresh;
+      await _storage.write(key: 'token', value: fresh);
+      return fresh;
+    } on ApiException {
+      // No se pudo renovar el token (caducado, revocado o sin conexión): damos la sesión por
+      // perdida y la borramos del móvil una sola vez, aquí, para que no la cierren a la vez
+      // todas las peticiones que estaban esperando. No se avisa al servidor porque no tenemos
+      // ningún token que vaya a aceptar.
+      // Si la sesión ya cambió, no la cerramos: la que hay ahora no es la que falló al renovarse.
+      if (refreshToken == currentRefreshToken) await _clearSession();
+      throw ApiException('La sesión ha caducado, inicia sesión otra vez', 401);
+    }
   }
 
   // Cuánto esperamos al servidor para cerrar la sesión. Pasado ese tiempo cerramos igual:
