@@ -22,8 +22,8 @@ class Session {
 // Llamadas a la API de autenticación
 class AuthService {
   // POST /auth/login. Si el email o la contraseña no son correctos, request() lanza un ApiException (401)
-  static Future<Session> login(String email, String password) async {
-    final data = await request('/auth/login', method: 'POST', body: {'email': email, 'password': password});
+  static Future<Session> login(String email, String password, {ApiRequest? httpRequest}) async {
+    final data = await (httpRequest ?? request)('/auth/login', method: 'POST', body: {'email': email, 'password': password});
 
     return Session(
       token: data['token'],

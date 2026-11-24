@@ -47,9 +47,17 @@ class AuthProvider extends ChangeNotifier {
     final savedUser = prefs.getString('user');
 
     if (savedToken != null && savedUser != null) {
-      token = savedToken;
-      refreshToken = await _storage.read(key: 'refreshToken');
-      user = User.fromJson(jsonDecode(savedUser));
+      final savedAccount = User.fromJson(jsonDecode(savedUser));
+
+      // Una sesión de administrador guardada antes de que existiera esta regla (o guardada a mano)
+      // tampoco puede entrar: se borra aquí, que es donde se decide si la app arranca dentro o no.
+      if (savedAccount.canUseApp) {
+        token = savedToken;
+        refreshToken = await _storage.read(key: 'refreshToken');
+        user = savedAccount;
+      } else {
+        await _clearSession();
+      }
     }
 
     starting = false;
@@ -63,7 +71,28 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final session = await AuthService.login(email, password);
+      final session = await AuthService.login(email, password, httpRequest: _httpRequest);
+
+      // El login sólo se acepta si la cuenta puede usar la app. Un administrador tiene su
+      // propio login en el backoffice; si entrara aquí, las cuatro pestañas de datos le
+      // responderían 403 y no entendería por qué.
+      if (!session.user.canUseApp) {
+        // Los tokens que acaba de crear el backend no se guardan en ningún sitio: se quedan en
+        // esta variable y se pierden. No pedimos cerrarlos en el servidor porque POST /auth/logout
+        // sube la versión de tokens del usuario, y eso echaría al administrador del backoffice en
+        // todos sus dispositivos justo cuando va a entrar ahí.
+        await _clearSession();
+
+        // Después de limpiar, porque _clearSession() borra el error
+        error = session.user.role == 'ADMIN'
+            ? 'Esta cuenta es de administrador: la app es para usuarios normales. '
+                'Los administradores entran por el backoffice.'
+            : 'Esta cuenta no puede usar la app: es para usuarios normales.';
+
+        loading = false;
+        notifyListeners();
+        return false;
+      }
 
       token = session.token;
       refreshToken = session.refreshToken;
