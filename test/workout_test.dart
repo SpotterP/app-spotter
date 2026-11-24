@@ -19,4 +19,11 @@ void main() {
     expect(workout.exercises.first.sets, 4);
     expect(workout.exercises.first.reps, 10);
   });
+
+  test('Exercise.fromJson lee la categoría', () {
+    final exercise = Exercise.fromJson({'_id': 'e1', 'name': 'Sentadilla búlgara', 'category': 'LEGS'});
+
+    expect(exercise.name, 'Sentadilla búlgara');
+    expect(exercise.category, 'LEGS');
+  });
 }
