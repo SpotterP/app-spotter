@@ -25,6 +25,13 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Map<String, String> _workoutNames = {};
   String? _error;
 
+  // Historial paginado: pide las páginas al backend y las junta sin repetir ni perder sesiones
+  SessionsPager? _pager;
+  // true mientras se trae la página siguiente (para no pedirla dos veces a la vez)
+  bool _loadingMore = false;
+  // Error al traer más entrenamientos: se enseña junto al botón, sin tirar la lista que ya hay
+  String? _loadMoreError;
+
   // Conexión en tiempo real: avisa cuando se guarda un entrenamiento nuevo
   final _socket = SocketService();
 
@@ -54,27 +61,66 @@ class _ProgressScreenState extends State<ProgressScreen> {
     _socket.connect(() => auth.token, _load);
   }
 
-  // Pide el resumen, los entrenamientos y los nombres de las rutinas a la vez
+  // Pide el resumen, la primera página de entrenamientos y los nombres de las rutinas a la vez
   Future<void> _load() async {
     final auth = context.read<AuthProvider>();
+
+    // Cada carga vuelve a empezar por la primera página: si refrescamos (o llega un entrenamiento
+    // nuevo), la lista no puede quedarse a medias con lo que había antes
+    final pager = SessionsPager(auth);
 
     try {
       final results = await Future.wait([
         ProgressService.progress(auth),
-        ProgressService.sessions(auth),
+        pager.loadNext(),
         ProgressService.workoutNames(auth),
       ]);
       if (!mounted) return;
 
       setState(() {
         _progress = results[0] as Progress;
-        _sessions = results[1] as List<TrainingSession>;
+        _pager = pager;
+        _sessions = pager.sessions;
         _workoutNames = results[2] as Map<String, String>;
+        _loadingMore = false;
+        _loadMoreError = null;
         _error = null;
       });
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.message);
+      setState(() {
+        _loadingMore = false;
+        _error = e.message;
+      });
+    }
+  }
+
+  // Trae la página siguiente del historial. Qué página toca lo decide el backend: el paginador
+  // usa su "pagination", así que aquí no hay ningún contador de páginas que se pueda desincronizar.
+  Future<void> _loadMore() async {
+    final pager = _pager;
+    if (pager == null || _loadingMore || !pager.hasMore) return;
+
+    setState(() {
+      _loadingMore = true;
+      _loadMoreError = null;
+    });
+
+    try {
+      await pager.loadNext();
+      // Si mientras tanto la pantalla se ha recargado, esta página ya no vale para la lista nueva
+      if (!mounted || !identical(_pager, pager)) return;
+
+      setState(() {
+        _sessions = pager.sessions;
+        _loadingMore = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted || !identical(_pager, pager)) return;
+      setState(() {
+        _loadMoreError = e.message;
+        _loadingMore = false;
+      });
     }
   }
 
@@ -117,6 +163,42 @@ class _ProgressScreenState extends State<ProgressScreen> {
                           )),
                         ),
                       ),
+                    // «Cargar más» solo aparece mientras el backend diga que hay más páginas
+                    if (_pager?.hasMore ?? false) ...[
+                      const SizedBox(height: 8),
+                      if (_loadingMore)
+                        // Mientras carga se dice qué está pasando, para que no parezca que se ha colgado
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                              SizedBox(width: 8),
+                              Text('Cargando más entrenamientos...'),
+                            ],
+                          ),
+                        )
+                      else ...[
+                        if (_loadMoreError != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              _loadMoreError!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: AppColors.danger),
+                            ),
+                          ),
+                        Center(
+                          child: OutlinedButton(
+                            onPressed: _loadMore,
+                            child: Text(_loadMoreError == null
+                                ? 'Cargar más entrenamientos'
+                                : 'Reintentar'),
+                          ),
+                        ),
+                      ],
+                    ],
                   ],
                 ),
     );
