@@ -32,7 +32,16 @@ jobs:
       # A tag with red tests must not produce a release half done.
       - run: flutter test
 
-      - run: flutter build apk --release
+      # A release built without the API URL would point at 10.0.2.2, the emulator.
+      - name: Build the APK against the production API
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then
+            echo "::error::Falta la variable del repo API_URL, por ejemplo https://api.tudominio.com. Se crea en Settings -> Secrets and variables -> Actions -> Variables."
+            exit 1
+          fi
+          flutter build apk --release --dart-define=API_URL="$API_URL"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -56,7 +65,15 @@ jobs:
       # The repo declares no DEVELOPMENT_TEAM and has no certificates, so signing
       # is impossible here. Flutter writes the Podfile itself and uses the
       # CocoaPods the macOS runner ships.
-      - run: flutter build ios --release --no-codesign
+      - name: Build iOS against the production API, unsigned
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then
+            echo "::error::Falta la variable del repo API_URL, por ejemplo https://api.tudominio.com. Se crea en Settings -> Secrets and variables -> Actions -> Variables."
+            exit 1
+          fi
+          flutter build ios --release --no-codesign --dart-define=API_URL="$API_URL"
 
       # A folder with Runner.app inside Payload/ is what an .ipa is.
       - run: |

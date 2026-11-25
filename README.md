@@ -48,6 +48,8 @@ Usuario de prueba del seed del backend: `user@example.com` / `seminari7`.
 
 Para otra URL de la API: `flutter run --dart-define=API_URL=http://192.168.1.10:1337`
 
+El build de release que arma GitHub toma la URL de la variable `API_URL` del repo (Settings → Secrets and variables → Actions → pestaña Variables), por ejemplo `https://api.tudominio.com`, y la pasa con el mismo `--dart-define`. Si la variable falta, el build se corta: un release sin ella apuntaría a `10.0.2.2` o a `localhost`.
+
 ## Linter y hook de Git
 
 El linter es el de Dart: `flutter analyze` (con las reglas de `flutter_lints`, en `analysis_options.yaml`).
