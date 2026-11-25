@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/progress.dart';
 import '../models/training.dart';
 import '../models/workout.dart';
 import '../providers/auth_provider.dart';
@@ -164,9 +165,6 @@ class _ExerciseCardState extends State<_ExerciseCard> {
     });
   }
 
-  // Enseña el peso sin decimales si es un número entero ("60" en vez de "60.0")
-  String _kg(double weight) => weight == weight.roundToDouble() ? weight.toInt().toString() : weight.toString();
-
   @override
   Widget build(BuildContext context) {
     final exercise = widget.exercise;
@@ -189,7 +187,7 @@ class _ExerciseCardState extends State<_ExerciseCard> {
             for (var i = 0; i < exercise.sets.length; i++)
               Row(
                 children: [
-                  Expanded(child: Text('Serie ${i + 1}: ${exercise.sets[i].reps} repeticiones con ${_kg(exercise.sets[i].weight)} kg')),
+                  Expanded(child: Text('Serie ${i + 1}: ${exercise.sets[i].reps} repeticiones con ${formatWeight(exercise.sets[i].weight)} kg')),
                   IconButton(
                     icon: const Icon(Icons.close, size: 18),
                     tooltip: 'Quitar serie',

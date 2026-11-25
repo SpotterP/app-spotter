@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 // Un ejercicio hecho, con las veces que se ha hecho (dentro del resumen de progreso)
 class ProgressExercise {
   final String name;
@@ -118,7 +120,12 @@ class SessionsPage {
 }
 
 // Enseña una fecha como día/mes/año ("5/3/2026")
-String formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
+String formatDate(DateTime date) => DateFormat('d/M/y').format(date);
+
+// Enseña un peso en kg sin decimales de más: "60" en vez de "60.0", y "12.5" tal cual (máximo 2 decimales).
+// Lo usan el entrenamiento y el detalle de un entrenamiento, para que un peso se lea igual en las dos.
+// Lleva punto decimal ('en_US'); si algún día se quiere coma, basta con cambiarlo por 'es'.
+String formatWeight(num weight) => NumberFormat('0.##', 'en_US').format(weight);
 
 // Un día como texto AAAA-MM-DD. Es el mismo formato que manda la API en trainedDays,
 // así los días calculados aquí se pintan con formatDay igual que los del resumen.
