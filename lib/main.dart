@@ -83,9 +83,41 @@ class AuthGate extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
 
     if (auth.starting) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      // Mientras se lee la sesión guardada se ve la forma de la pantalla que va a venir, gris,
+      // en vez de un círculo girando sobre el vacío. Skeletonizer es el mismo paquete que usan
+      // las demás pantallas: pinta el contenido real como esqueleto.
+      return const Scaffold(
+        body: Skeletonizer(enabled: true, child: StartingSkeleton()),
+      );
     }
 
     return auth.isLoggedIn ? const HomeScreen() : const LoginScreen();
+  }
+}
+
+// Forma aproximada de la pantalla de inicio mientras se lee la sesión guardada: un título y unas
+// tarjetas con el mismo aire que las listas de la app. El texto es de mentira, Skeletonizer lo tapa.
+class StartingSkeleton extends StatelessWidget {
+  const StartingSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const Text('Cargando', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        for (var i = 0; i < 4; i++) ...[
+          const Card(
+            child: ListTile(
+              title: Text('Entrenamiento'),
+              subtitle: Text('Hace un rato'),
+              trailing: Icon(Icons.chevron_right),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ],
+    );
   }
 }
