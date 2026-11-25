@@ -31,7 +31,7 @@ class SessionDetailScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     // Una línea por serie: "Serie 1: 10 repeticiones con 60 kg"
                     for (var i = 0; i < exercise.sets.length; i++)
-                      Text('Serie ${i + 1}: ${exercise.sets[i].reps} repeticiones con ${exercise.sets[i].weight} kg'),
+                      Text('Serie ${i + 1}: ${exercise.sets[i].reps} repeticiones con ${formatWeight(exercise.sets[i].weight)} kg'),
                   ],
                 ),
               ),
