@@ -101,9 +101,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
+          # --repo: este job no hace checkout, así que gh no tiene un repositorio git del cual
+          # deducir dónde publicar. Se lo decimos explícito en vez de bajar el código solo para eso.
+          REPO: ${{ github.repository }}
         run: |
           cd dist
           mv app-release.apk "app-spotter-$TAG-android.apk"
           mv app.ipa "app-spotter-$TAG-ios-unsigned.ipa"
-          gh release create "$TAG" --draft --title "$TAG" --generate-notes \
+          gh release create "$TAG" --repo "$REPO" --draft --title "$TAG" --generate-notes \
             "app-spotter-$TAG-android.apk" "app-spotter-$TAG-ios-unsigned.ipa"
