@@ -3,11 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../models/workout.dart';
 import '../providers/auth_provider.dart';
 import '../services/workout_service.dart';
 import '../theme/app_colors.dart';
+
+// Ejercicio de mentira. Solo sirve para dibujar el esqueleto mientras llega la primera página
+final _fakeExercise = Exercise(id: '', name: 'Nombre del ejercicio', category: 'CORE');
 
 // Las categorías del catálogo: la clave que usa la API y su nombre en español
 const _categories = [
@@ -153,8 +157,8 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
     );
   }
 
-  // La lista de ejercicios. El paquete pinta la rueda de carga de la primera página y la del final;
-  // nosotros solo ponemos los textos en español de "sin resultados" y de los errores
+  // La lista de ejercicios. El paquete pinta la rueda de carga del final; nosotros ponemos el
+  // esqueleto de la primera página y los textos en español de "sin resultados" y de los errores
   Widget _buildList() {
     return PagingListener(
       controller: _pagingController,
@@ -163,6 +167,10 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
         fetchNextPage: fetchNextPage,
         builderDelegate: PagedChildBuilderDelegate<Exercise>(
           itemBuilder: (context, exercise, index) => _buildTile(exercise),
+          // Mientras llega la primera página se pintan 6 ejercicios de mentira, y Skeletonizer los deja como esqueleto
+          firstPageProgressIndicatorBuilder: (_) => Skeletonizer(
+            child: Column(children: [for (var i = 0; i < 6; i++) _buildTile(_fakeExercise)]),
+          ),
           noItemsFoundIndicatorBuilder: (_) => const Center(child: Text('No hay ejercicios con esos filtros')),
           firstPageErrorIndicatorBuilder: (_, error) => Center(child: Text('$error', style: const TextStyle(color: AppColors.danger))),
           // Si falla al cargar más, se enseña el error al final de la lista y al tocarlo se reintenta

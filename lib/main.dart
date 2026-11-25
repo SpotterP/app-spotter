@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
@@ -45,6 +46,19 @@ class MyApp extends StatelessWidget {
             brightness: Brightness.dark,
           ),
           themeMode: themeProvider.mode,
+          // Le dice a Skeletonizer (el esqueleto que se ve mientras cargan los datos) qué tema usar. Sin
+          // esto usaría siempre el del móvil, aunque el usuario haya elegido otro en Perfil.
+          // En "Sistema" se deja en null y entonces sí usa el del móvil
+          builder: (_, child) => SkeletonizerConfig(
+            data: SkeletonizerConfigData(
+              brightness: switch (themeProvider.mode) {
+                ThemeMode.light => Brightness.light,
+                ThemeMode.dark => Brightness.dark,
+                ThemeMode.system => null,
+              },
+            ),
+            child: child!,
+          ),
           // Pantalla de inicio: depende de si hay sesión o no
           home: const AuthGate(),
           getPages: [

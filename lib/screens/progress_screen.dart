@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../models/progress.dart';
 import '../providers/auth_provider.dart';
@@ -8,6 +9,20 @@ import '../services/progress_service.dart';
 import '../services/socket_service.dart';
 import '../theme/app_colors.dart';
 import 'session_detail_screen.dart';
+
+// Datos de mentira. Solo sirven para dibujar el esqueleto mientras llegan los de verdad
+final _fakeProgress = Progress(
+  totalSessions: 0,
+  trainedDays: [],
+  exercises: [
+    ProgressExercise(name: 'Nombre del ejercicio', timesDone: 1),
+    ProgressExercise(name: 'Nombre del ejercicio', timesDone: 1),
+  ],
+);
+// Tres entrenamientos en días distintos, para que el resumen tenga tres días entrenados
+final _fakeSessions = [
+  for (var day = 1; day <= 3; day++) TrainingSession(id: 'fake-$day', workoutId: null, startedAt: DateTime(2026, 1, day), exercises: []),
+];
 
 // Pestaña "Progreso": el resumen del usuario (entrenamientos, días y ejercicios)
 // y la lista de entrenamientos realizados. Al tocar uno se ve su detalle.
@@ -134,6 +149,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
   @override
   Widget build(BuildContext context) {
     final progress = _progress;
+    final loading = progress == null;
+    // Con datos de mentira mientras carga, y con los de verdad cuando llegan
+    final sessions = loading ? _fakeSessions : _sessions;
 
     return Scaffold(
       appBar: AppBar(
@@ -142,65 +160,67 @@ class _ProgressScreenState extends State<ProgressScreen> {
       ),
       body: _error != null
           ? Center(child: Text(_error!, style: const TextStyle(color: AppColors.danger)))
-          : progress == null
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    _buildSummary(progress),
-                    const SizedBox(height: 24),
-                    const Text('Entrenamientos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          // Mientras cargan se pintan datos de mentira, y Skeletonizer los deja como esqueleto
+          : Skeletonizer(
+              enabled: loading,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildSummary(progress ?? _fakeProgress, sessions),
+                  const SizedBox(height: 24),
+                  const Text('Entrenamientos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  if (sessions.isEmpty) const Text('Todavía no has hecho ningún entrenamiento'),
+                  for (final session in sessions)
+                    Card(
+                      child: ListTile(
+                        title: Text(_routineName(session)),
+                        subtitle: Text(formatDate(session.startedAt)),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => SessionDetailScreen(session: session, routineName: _routineName(session)),
+                        )),
+                      ),
+                    ),
+                  // «Cargar más» solo aparece mientras el backend diga que hay más páginas
+                  if (_pager?.hasMore ?? false) ...[
                     const SizedBox(height: 8),
-                    if (_sessions.isEmpty) const Text('Todavía no has hecho ningún entrenamiento'),
-                    for (final session in _sessions)
-                      Card(
-                        child: ListTile(
-                          title: Text(_routineName(session)),
-                          subtitle: Text(formatDate(session.startedAt)),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => SessionDetailScreen(session: session, routineName: _routineName(session)),
-                          )),
+                    if (_loadingMore)
+                      // Mientras carga se dice qué está pasando, para que no parezca que se ha colgado
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                            SizedBox(width: 8),
+                            Text('Cargando más entrenamientos...'),
+                          ],
+                        ),
+                      )
+                    else ...[
+                      if (_loadMoreError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            _loadMoreError!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: AppColors.danger),
+                          ),
+                        ),
+                      Center(
+                        child: OutlinedButton(
+                          onPressed: _loadMore,
+                          child: Text(_loadMoreError == null
+                              ? 'Cargar más entrenamientos'
+                              : 'Reintentar'),
                         ),
                       ),
-                    // «Cargar más» solo aparece mientras el backend diga que hay más páginas
-                    if (_pager?.hasMore ?? false) ...[
-                      const SizedBox(height: 8),
-                      if (_loadingMore)
-                        // Mientras carga se dice qué está pasando, para que no parezca que se ha colgado
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-                              SizedBox(width: 8),
-                              Text('Cargando más entrenamientos...'),
-                            ],
-                          ),
-                        )
-                      else ...[
-                        if (_loadMoreError != null)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              _loadMoreError!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: AppColors.danger),
-                            ),
-                          ),
-                        Center(
-                          child: OutlinedButton(
-                            onPressed: _loadMore,
-                            child: Text(_loadMoreError == null
-                                ? 'Cargar más entrenamientos'
-                                : 'Reintentar'),
-                          ),
-                        ),
-                      ],
                     ],
                   ],
-                ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -209,8 +229,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
   // se calculan en local con las sesiones ya cargadas, para que el calendario y la lista de
   // abajo digan el mismo día (el backend los agrupa en UTC y una sesión de noche se iba al día
   // anterior). Si hay más páginas sin cargar, los días son los del historial cargado.
-  Widget _buildSummary(Progress progress) {
-    final trainedDays = localTrainedDays(_sessions);
+  Widget _buildSummary(Progress progress, List<TrainingSession> sessions) {
+    final trainedDays = localTrainedDays(sessions);
 
     return Card(
       child: Padding(
