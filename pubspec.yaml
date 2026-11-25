@@ -21,6 +21,8 @@ dependencies:
   permission_handler: ^11.3.0
   provider: ^6.1.5+1
   shared_preferences: ^2.2.0
+  # skeletonizer: el esqueleto gris que se ve mientras cargan los datos de una pantalla
+  skeletonizer: 3.0.0
   socket_io_client: ^3.1.6
 
 dev_dependencies:

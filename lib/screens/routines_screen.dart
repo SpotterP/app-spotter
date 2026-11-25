@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../models/workout.dart';
 import '../providers/auth_provider.dart';
@@ -7,6 +8,9 @@ import '../services/http_client.dart';
 import '../services/workout_service.dart';
 import '../theme/app_colors.dart';
 import 'routine_edit_screen.dart';
+
+// Rutinas de mentira. Solo sirven para dibujar el esqueleto mientras llegan las de verdad
+final _fakeWorkouts = List.filled(3, Workout(id: '', name: 'Nombre de la rutina', days: [], exercises: []));
 
 // Pestaña "Mis rutinas": lista las rutinas del usuario, permite crear una nueva y borrar las que
 // ya no usa. Al tocar una rutina se abre su edición.
@@ -138,23 +142,30 @@ class _RoutinesScreenState extends State<RoutinesScreen> {
           ),
           const SizedBox(height: 16),
           if (_error != null) Text(_error!, style: const TextStyle(color: AppColors.danger)),
-          if (_error == null && workouts == null) const Center(child: CircularProgressIndicator()),
           // Sin rutinas enseñamos un mensaje en vez de una lista vacía
           if (workouts != null && workouts.isEmpty) const Center(child: Text('Todavía no tienes rutinas. Crea una para empezar.')),
-          if (workouts != null)
-            for (final workout in workouts)
-              Card(
-                child: ListTile(
-                  title: Text(workout.name),
-                  subtitle: Text(workout.exercises.length == 1 ? '1 ejercicio' : '${workout.exercises.length} ejercicios'),
-                  onTap: () => _open(workout),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: AppColors.danger),
-                    tooltip: 'Borrar',
-                    onPressed: () => _delete(workout),
-                  ),
-                ),
+          // Mientras cargan se pintan 3 rutinas de mentira y Skeletonizer las deja como esqueleto
+          if (_error == null)
+            Skeletonizer(
+              enabled: workouts == null,
+              child: Column(
+                children: [
+                  for (final workout in workouts ?? _fakeWorkouts)
+                    Card(
+                      child: ListTile(
+                        title: Text(workout.name),
+                        subtitle: Text(workout.exercises.length == 1 ? '1 ejercicio' : '${workout.exercises.length} ejercicios'),
+                        onTap: () => _open(workout),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline, color: AppColors.danger),
+                          tooltip: 'Borrar',
+                          onPressed: () => _delete(workout),
+                        ),
+                      ),
+                    ),
+                ],
               ),
+            ),
         ],
       ),
     );

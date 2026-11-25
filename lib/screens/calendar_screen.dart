@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../models/workout.dart';
 import '../providers/auth_provider.dart';
@@ -98,14 +99,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
       body: _error != null
           ? Center(child: Text(_error!, style: const TextStyle(color: AppColors.danger)))
-          : workouts == null
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    for (final (key, label) in weekDays) _buildDay(key, label, workouts),
-                  ],
-                ),
+          // Mientras llegan las rutinas se pinta la semana sin rutinas, y Skeletonizer la deja como esqueleto
+          : Skeletonizer(
+              enabled: workouts == null,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  for (final (key, label) in weekDays) _buildDay(key, label, workouts ?? []),
+                ],
+              ),
+            ),
     );
   }
 

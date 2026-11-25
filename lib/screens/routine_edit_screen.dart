@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../models/workout.dart';
 import '../providers/auth_provider.dart';
@@ -7,6 +8,13 @@ import '../services/http_client.dart';
 import '../services/workout_service.dart';
 import '../theme/app_colors.dart';
 import 'exercise_picker_screen.dart';
+
+// Ejercicios de mentira. Solo sirven para dibujar el esqueleto mientras llega la rutina de verdad.
+// Cada uno lleva un id distinto porque la lista usa el id como key
+final _fakeRows = [
+  WorkoutExercise(exercise: Exercise(id: 'fake-1', name: 'Nombre del ejercicio'), sets: 3, reps: 10),
+  WorkoutExercise(exercise: Exercise(id: 'fake-2', name: 'Nombre del ejercicio'), sets: 3, reps: 10),
+];
 
 // Pantalla para editar una rutina: cambiar el nombre, añadir ejercicios del catálogo,
 // elegir sus series y repeticiones, cambiar su orden arrastrando, quitarlos y guardar.
@@ -116,61 +124,63 @@ class _RoutineEditScreenState extends State<RoutineEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Mientras carga se pintan los ejercicios de mentira, y Skeletonizer deja la pantalla como esqueleto
+    final rows = _loading ? _fakeRows : _rows;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Editar rutina')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
+      body: Skeletonizer(
+        enabled: _loading,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(_error!, style: const TextStyle(color: AppColors.danger)),
+              ),
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 24),
+            const Text('Ejercicios', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            if (rows.isEmpty) const Text('Esta rutina no tiene ejercicios. Añade el primero.'),
+            // Lista que se puede reordenar arrastrando. Va dentro de otra lista, por eso
+            // shrinkWrap (ocupa solo lo que necesita) y sin scroll propio
+            ReorderableListView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              // onReorder está marcado como obsoleto en las versiones más nuevas de Flutter (se sustituye por
+              // onReorderItem), pero onReorderItem no existe en las anteriores y la app no compilaría en ellas
+              // ignore: deprecated_member_use
+              onReorder: _reorder,
               children: [
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(_error!, style: const TextStyle(color: AppColors.danger)),
-                  ),
-                TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
-                ),
-                const SizedBox(height: 24),
-                const Text('Ejercicios', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                if (_rows.isEmpty) const Text('Esta rutina no tiene ejercicios. Añade el primero.'),
-                // Lista que se puede reordenar arrastrando. Va dentro de otra lista, por eso
-                // shrinkWrap (ocupa solo lo que necesita) y sin scroll propio
-                ReorderableListView(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  buildDefaultDragHandles: false,
-                  // onReorder está marcado como obsoleto en las versiones más nuevas de Flutter (se sustituye por
-                  // onReorderItem), pero onReorderItem no existe en las anteriores y la app no compilaría en ellas
-                  // ignore: deprecated_member_use
-                  onReorder: _reorder,
-                  children: [
-                    for (var i = 0; i < _rows.length; i++) _buildRow(i),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _addExercise,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Añadir ejercicio'),
-                ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _saving ? null : _save,
-                  child: Text(_saving ? 'Guardando…' : 'Guardar cambios'),
-                ),
+                for (var i = 0; i < rows.length; i++) _buildRow(rows[i], i),
               ],
             ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _addExercise,
+              icon: const Icon(Icons.add),
+              label: const Text('Añadir ejercicio'),
+            ),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: _saving ? null : _save,
+              child: Text(_saving ? 'Guardando…' : 'Guardar cambios'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   // Un ejercicio de la rutina: asa para arrastrar, nombre, botón de quitar y series y repeticiones.
   // La key tiene que ser única para que Flutter sepa qué ejercicio se ha movido
-  Widget _buildRow(int index) {
-    final row = _rows[index];
-
+  Widget _buildRow(WorkoutExercise row, int index) {
     return Card(
       key: ValueKey(row.exercise.id),
       child: Padding(
