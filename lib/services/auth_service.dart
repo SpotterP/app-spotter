@@ -49,7 +49,7 @@ class AuthService {
   }
 
   // POST /auth/register. La API no devuelve token: después del registro hay que hacer login
-  static Future<void> register(String name, String email, String password) async {
-    await request('/auth/register', method: 'POST', body: {'name': name, 'email': email, 'password': password});
+  static Future<void> register(String name, String email, String password, {ApiRequest? httpRequest}) async {
+    await (httpRequest ?? request)('/auth/register', method: 'POST', body: {'name': name, 'email': email, 'password': password});
   }
 }

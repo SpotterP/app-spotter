@@ -6,6 +6,7 @@ import 'package:app_spotter/providers/auth_provider.dart';
 import 'package:app_spotter/screens/login_screen.dart';
 import 'package:app_spotter/screens/register_screen.dart';
 import 'package:app_spotter/screens/routine_edit_screen.dart';
+import 'package:app_spotter/services/http_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -146,20 +147,29 @@ void main() {
     });
 
     testWidgets('con los datos bien no sale ningún aviso y se intenta crear la cuenta', (tester) async {
-      final auth = fakeAuth([]);
+      // La API de este test falla al crear la cuenta, como si no hubiera conexión
+      final called = <String>[];
+      SharedPreferences.setMockInitialValues({});
+      FlutterSecureStorage.setMockInitialValues({});
+      final auth = AuthProvider(httpRequest: (path, {method = 'GET', body, token}) async {
+        called.add('$method $path');
+        throw ApiException('sin conexión', 0);
+      });
       await open(tester, auth, const RegisterScreen());
 
       await type(tester, 'Nombre', 'Ana');
       await type(tester, 'Email', 'ana@example.com');
-      // 8 caracteres justos: es el mínimo que exige el backend
+      // 8 caracteres justos: es el mínimo que exige el backend. Y se repite igual, como pide el formulario
       await type(tester, 'Contraseña', '12345678');
+      await type(tester, 'Repite la contraseña', '12345678');
       await tap(tester, 'Crear cuenta');
 
       expect(find.text('Escribe tu nombre'), findsNothing);
       expect(find.text('Escribe un email válido'), findsNothing);
       expect(find.text('Mínimo 8 caracteres'), findsNothing);
-      // La cuenta se ha intentado crear. No hay backend, así que falla al conectar, y eso deja un error
-      expect(auth.error, isNotNull);
+      // La cuenta se ha intentado crear, y como la API falla se ve el error
+      expect(called, ['POST /auth/register']);
+      expect(auth.error, 'sin conexión');
     });
   });
 

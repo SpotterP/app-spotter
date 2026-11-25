@@ -34,6 +34,10 @@ class AuthProvider extends ChangeNotifier {
   // Mensaje de error de la última acción, para enseñarlo en pantalla
   String? error;
 
+  // Motivo por el que la API ha rechazado la contraseña al registrarse. Va aparte de error porque
+  // se enseña junto al campo de la contraseña y no abajo, con los demás errores
+  String? passwordError;
+
   // Estado de la carga del perfil (GET /users/me)
   bool profileLoading = false;
   String? profileError;
@@ -128,16 +132,24 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> register(String name, String email, String password) async {
     loading = true;
     error = null;
+    passwordError = null;
     notifyListeners();
 
     try {
-      await AuthService.register(name, email, password);
+      await AuthService.register(name, email, password, httpRequest: _httpRequest);
 
       loading = false;
       notifyListeners();
       return true;
     } on ApiException catch (e) {
-      error = e.message;
+      // El backend contesta 422 cuando algún dato no cumple las reglas, con el motivo (por ejemplo
+      // "password" length must be at least 8 characters long). Si habla de la contraseña, se guarda
+      // aparte para enseñarlo junto a su campo; cualquier otro error sale abajo, como siempre
+      if (e.status == 422 && RegExp('password|contraseña', caseSensitive: false).hasMatch(e.message)) {
+        passwordError = e.message;
+      } else {
+        error = e.message;
+      }
     }
 
     loading = false;
@@ -320,6 +332,7 @@ class AuthProvider extends ChangeNotifier {
   // Quita el mensaje de error (al cambiar de pantalla)
   void clearError() {
     error = null;
+    passwordError = null;
     notifyListeners();
   }
 }
