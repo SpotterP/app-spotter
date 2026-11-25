@@ -20,6 +20,8 @@ dependencies:
   # intl: dar formato a los pesos y a las fechas igual en toda la app
   intl: 0.20.3
   provider: ^6.1.5+1
+  # regex_ui: el indicador de fortaleza de la contraseña y la lista de lo que le falta
+  regex_ui: 1.1.1
   shared_preferences: ^2.2.0
   # skeletonizer: el esqueleto gris que se ve mientras cargan los datos de una pantalla
   skeletonizer: 3.0.0

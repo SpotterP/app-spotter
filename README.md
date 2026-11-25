@@ -6,7 +6,7 @@ Usa la API de [backend-spotter](https://github.com/SpotterP/backend-spotter).
 
 ## Qué tiene
 
-- **Registro** (`POST /auth/register`): nombre, email y contraseña (mínimo 8 caracteres). Después hay que iniciar sesión.
+- **Registro** (`POST /auth/register`): nombre, email, contraseña (mínimo 8 caracteres) y repetir la contraseña. Mientras se escribe, un indicador dice si es débil, media o fuerte y qué le falta (mayúsculas, minúsculas, números, símbolos o más caracteres). Es solo una ayuda: lo único que impide enviar el formulario es tener menos de 8 caracteres, que es lo que exige la API. Si la API rechaza la contraseña, el motivo sale junto al campo. Después hay que iniciar sesión.
 - **Login** (`POST /auth/login`): guarda los tokens en el almacenamiento seguro (`flutter_secure_storage`: Keychain en iOS, Keystore en Android) y el usuario en `shared_preferences`, así la sesión sigue al cerrar la app.
 - **Perfil**: nombre, email y rol del usuario, y botón de cerrar sesión.
 - **Tema claro y oscuro**: en Perfil se elige entre Claro, Oscuro o Sistema (el del móvil, que es el de por defecto). La elección se guarda en el móvil con `shared_preferences` y se mantiene al cerrar la app (`ThemeProvider`).

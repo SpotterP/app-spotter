@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:regex_ui/regex_ui.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 import 'providers/auth_provider.dart';
@@ -12,6 +13,8 @@ import 'theme/app_colors.dart';
 
 // Punto de entrada de la app. main() es lo primero que se ejecuta y runApp() pinta el widget raíz.
 void main() {
+  // Los textos que escribe regex_ui solo (el indicador de la contraseña) salen en español
+  RegexLabels.current = RegexLabels.es;
   runApp(const MyApp());
 }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:regex_ui/regex_ui.dart';
 
 import '../providers/auth_provider.dart';
 import '../theme/app_colors.dart';
@@ -20,12 +21,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmController = TextEditingController();
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmController.dispose();
     super.dispose();
   }
 
@@ -80,9 +83,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   TextFormField(
                     controller: _passwordController,
                     obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Contraseña', border: OutlineInputBorder()),
-                    // La API pide mínimo 8 caracteres
+                    // errorText enseña el motivo si la API rechaza la contraseña, junto a su campo
+                    decoration: InputDecoration(labelText: 'Contraseña', border: const OutlineInputBorder(), errorText: auth.passwordError),
+                    // Al escribir de nuevo, el motivo del rechazo anterior ya no vale
+                    onChanged: (_) {
+                      if (auth.passwordError != null) auth.clearError();
+                    },
+                    // La API pide mínimo 8 caracteres: es lo único que impide enviar el formulario
                     validator: FormBuilderValidators.minLength(8, errorText: 'Mínimo 8 caracteres'),
+                  ),
+                  // Indicador de fortaleza (débil, media o fuerte) y lista de lo que le falta a la contraseña.
+                  // Se actualiza con cada carácter. Solo ayuda: no bloquea nada, la API solo exige 8 caracteres
+                  RegexUI(
+                    controller: _passwordController,
+                    regexList: RegexModel.passwordRules(),
+                    showStrength: true,
+                    strengthMode: RegexUIStrength.password,
+                    // El paquete usa 5 niveles y aquí se enseñan 3
+                    strengthLabels: const ['Débil', 'Débil', 'Media', 'Media', 'Fuerte'],
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _confirmController,
+                    obscureText: true,
+                    decoration: const InputDecoration(labelText: 'Repite la contraseña', border: OutlineInputBorder()),
+                    // Solo se comprueba aquí: a la API le llega una sola contraseña
+                    validator: RegexModel.validator([RegexModel.sameAs(_passwordController, title: 'Las contraseñas no coinciden')]),
                   ),
                   if (auth.error != null) ...[
                     const SizedBox(height: 16),
