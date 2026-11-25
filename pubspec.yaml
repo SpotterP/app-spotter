@@ -1,7 +1,7 @@
 name: app_spotter
 description: App móvil de Spotter, para registrar rutinas y entrenamientos.
 publish_to: 'none'
-version: 1.0.0+1
+version: 0.0.1+1
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
