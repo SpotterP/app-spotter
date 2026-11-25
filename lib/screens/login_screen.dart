@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
@@ -54,14 +55,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
-                    validator: (value) => (value == null || !value.contains('@')) ? 'Escribe un email válido' : null,
+                    // Regla ya hecha de email: un email como "a@b" no vale. Antes de mirarlo se quitan los espacios
+                    // de los lados, porque el teclado del móvil los suele añadir al autocompletar
+                    validator: FormBuilderValidators.transform(
+                      (value) => (value ?? '').trim(),
+                      FormBuilderValidators.email(errorText: 'Escribe un email válido'),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
                     obscureText: true,
                     decoration: const InputDecoration(labelText: 'Contraseña', border: OutlineInputBorder()),
-                    validator: (value) => (value == null || value.isEmpty) ? 'Escribe la contraseña' : null,
+                    // Al entrar solo se pide que no esté vacía: la longitud ya se comprobó al registrarse
+                    validator: FormBuilderValidators.required(errorText: 'Escribe la contraseña'),
                   ),
                   // Error de la API (por ejemplo "Email o contraseña incorrectos")
                   if (auth.error != null) ...[

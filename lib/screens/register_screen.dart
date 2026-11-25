@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
@@ -61,14 +62,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   TextFormField(
                     controller: _nameController,
                     decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
-                    validator: (value) => (value == null || value.trim().isEmpty) ? 'Escribe tu nombre' : null,
+                    validator: FormBuilderValidators.required(errorText: 'Escribe tu nombre'),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
-                    validator: (value) => (value == null || !value.contains('@')) ? 'Escribe un email válido' : null,
+                    // Regla ya hecha de email: un email como "a@b" no vale. Antes de mirarlo se quitan los espacios
+                    // de los lados, porque el teclado del móvil los suele añadir al autocompletar
+                    validator: FormBuilderValidators.transform(
+                      (value) => (value ?? '').trim(),
+                      FormBuilderValidators.email(errorText: 'Escribe un email válido'),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -76,7 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     obscureText: true,
                     decoration: const InputDecoration(labelText: 'Contraseña', border: OutlineInputBorder()),
                     // La API pide mínimo 8 caracteres
-                    validator: (value) => (value == null || value.length < 8) ? 'Mínimo 8 caracteres' : null,
+                    validator: FormBuilderValidators.minLength(8, errorText: 'Mínimo 8 caracteres'),
                   ),
                   if (auth.error != null) ...[
                     const SizedBox(height: 16),
