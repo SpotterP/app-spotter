@@ -1,57 +1,48 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
-import '../controllers/home_controller.dart';
-import '../theme/app_colors.dart';
-import 'authors_screen.dart';
-import 'books_screen.dart';
-import 'permissions_screen.dart';
+import 'calendar_screen.dart';
+import 'profile_screen.dart';
+import 'progress_screen.dart';
+import 'routines_screen.dart';
+import 'training_screen.dart';
 
-// Pantalla principal con las 3 pestañas de abajo (antes app/(tabs)/_layout.tsx).
-// Ahora es un StatelessWidget: la pestaña activa vive en el HomeController (GetX).
-class HomeScreen extends StatelessWidget {
+// Pantalla principal cuando hay sesión. Tiene una barra de abajo con las 5 secciones de la app.
+// Las 5 secciones están hechas: Entrenar, Rutinas, Calendario, Progreso y Perfil.
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final c = Get.put(HomeController());
+  State<HomeScreen> createState() => _HomeScreenState();
+}
 
-    // Obx se repinta solo cuando cambia c.currentIndex
-    return Obx(
-      () => Scaffold(
-        // IndexedStack enseña solo una pantalla pero mantiene vivas las demás,
-        // así no se pierde el buscador ni la lista al cambiar de pestaña.
-        body: IndexedStack(
-          index: c.currentIndex.value,
-          children: const [
-            BooksScreen(),
-            AuthorsScreen(),
-            PermissionsScreen(),
-          ],
-        ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: c.currentIndex.value,
-          backgroundColor: Colors.white,
-          indicatorColor: AppColors.primaryLight,
-          onDestinationSelected: c.changeTab,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.menu_book_outlined),
-              selectedIcon: Icon(Icons.menu_book, color: AppColors.primary),
-              label: 'Libros',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.people_outline),
-              selectedIcon: Icon(Icons.people, color: AppColors.primary),
-              label: 'Autores',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.verified_user_outlined),
-              selectedIcon: Icon(Icons.verified_user, color: AppColors.primary),
-              label: 'Permisos',
-            ),
-          ],
-        ),
+class _HomeScreenState extends State<HomeScreen> {
+  // Pestaña que se está viendo (0 = Entrenar, 1 = Mis rutinas, 2 = Calendario, 3 = Progreso, 4 = Perfil)
+  int _index = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // IndexedStack mantiene las pestañas vivas y solo enseña la elegida
+      body: IndexedStack(
+        index: _index,
+        children: const [
+          TrainingScreen(),
+          RoutinesScreen(),
+          CalendarScreen(),
+          ProgressScreen(),
+          ProfileScreen(),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) => setState(() => _index = i),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.play_circle_outline), selectedIcon: Icon(Icons.play_circle), label: 'Entrenar'),
+          NavigationDestination(icon: Icon(Icons.fitness_center_outlined), selectedIcon: Icon(Icons.fitness_center), label: 'Rutinas'),
+          NavigationDestination(icon: Icon(Icons.calendar_month_outlined), selectedIcon: Icon(Icons.calendar_month), label: 'Calendario'),
+          NavigationDestination(icon: Icon(Icons.show_chart), selectedIcon: Icon(Icons.show_chart), label: 'Progreso'),
+          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Perfil'),
+        ],
       ),
     );
   }

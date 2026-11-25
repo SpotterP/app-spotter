@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import '../config/environment.dart';
 
 // Clase simple para guardar los errores de la API con su código HTTP
-// (en React Native era la clase ApiError que extendía Error)
 class ApiException implements Exception {
   final String message;
   final int status;
@@ -16,18 +15,22 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
-// Función común para hacer peticiones a la API (como request() de http.ts).
+// Función común para hacer peticiones a la API.
 // method: GET, POST, PUT o DELETE. body: mapa que se convierte a JSON.
+// token: si lo pasamos, se manda en la cabecera Authorization (para las rutas protegidas).
 Future<dynamic> request(
   String path, {
   String method = 'GET',
   Map<String, dynamic>? body,
+  String? token,
 }) async {
   final url = Uri.parse('${Environment.apiUrl}$path');
   final headers = <String, String>{
     'Accept': 'application/json',
     // solo mandamos Content-Type si hay cuerpo
     if (body != null) 'Content-Type': 'application/json',
+    // la API espera "Authorization: Bearer <token>"
+    if (token != null) 'Authorization': 'Bearer $token',
   };
 
   http.Response res;
@@ -50,7 +53,7 @@ Future<dynamic> request(
   } catch (_) {
     // Si no conecta, avisamos de que miren si el backend está arrancado
     throw ApiException(
-      'No se puede conectar con la API en $url. ¿Está arrancado el backend en el puerto 1337?',
+      'No se puede conectar con la API en $url. ¿Está arrancado el backend (backend-spotter)?',
       0,
     );
   }

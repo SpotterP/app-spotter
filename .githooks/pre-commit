@@ -1,0 +1,17 @@
+#!/bin/sh
+# Hook de Git: antes de cada commit se pasa el linter de Dart (flutter analyze).
+# Si encuentra problemas, el commit se cancela.
+# Se activa una sola vez en cada clon con:   git config core.hooksPath .githooks
+
+echo "Pasando el linter (flutter analyze)..."
+
+if ! command -v flutter >/dev/null 2>&1; then
+    echo "No encuentro flutter en el PATH, así que no puedo pasar el linter."
+    exit 1
+fi
+
+if ! flutter analyze; then
+    echo ""
+    echo "El linter ha encontrado problemas: arréglalos y vuelve a hacer el commit."
+    exit 1
+fi

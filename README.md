@@ -1,112 +1,72 @@
-# Seminari 9: API REST para el BackOffice de Flutter
+# Spotter (app)
 
-Backoffice adaptado a **Flutter** y Dart para el **Seminario 9 de EA**. Es la versión de Flutter del backoffice que antes hicimos en React Native: usa **la misma API REST** (`EA-Seminari9-Flutter-API`) y dispone de las pantallas de gestión de autores y libros (listar, buscar en tiempo real, crear, editar y borrar autores y libros, vista en lista o tarjetas, permisos de hardware/cámara y pantalla explicativa de teoría).
+App móvil de Spotter hecha en Flutter. Es la base de la app: ahora tiene **cuenta** (registro e inicio de sesión) y **perfil**. Las rutinas y los entrenamientos se irán añadiendo encima.
 
-Incluye además la solución completa al ejercicio del campo **Editorial (`publisher`)**.
+Usa la API de [backend-spotter](https://github.com/SpotterP/backend-spotter).
 
-## Requisitos
+## Qué tiene
 
-- [Flutter](https://docs.flutter.dev/get-started/install) 3.x (comprueba la instalación con `flutter doctor`).
-- [Node.js](https://nodejs.org/) 22 o superior, para el backend.
-- [MongoDB](https://www.mongodb.com/), local o en Atlas, para el backend.
-- El backend arrancado (carpeta `EA-Seminari9-Flutter-API`, en el puerto 1337).
+- **Registro** (`POST /auth/register`): nombre, email, contraseña (mínimo 8 caracteres) y repetir la contraseña. Mientras se escribe, un indicador dice si es débil, media o fuerte y qué le falta (mayúsculas, minúsculas, números, símbolos o más caracteres). Es solo una ayuda: lo único que impide enviar el formulario es tener menos de 8 caracteres, que es lo que exige la API. Si la API rechaza la contraseña, el motivo sale junto al campo. Después hay que iniciar sesión.
+- **Login** (`POST /auth/login`): guarda los tokens en el almacenamiento seguro (`flutter_secure_storage`: Keychain en iOS, Keystore en Android) y el usuario en `shared_preferences`, así la sesión sigue al cerrar la app.
+- **Perfil**: nombre, email y rol del usuario, y botón de cerrar sesión.
+- **Tema claro y oscuro**: en Perfil se elige entre Claro, Oscuro o Sistema (el del móvil, que es el de por defecto). La elección se guarda en el móvil con `shared_preferences` y se mantiene al cerrar la app (`ThemeProvider`).
+- **Esqueleto de carga**: mientras cargan los datos de Rutinas, Calendario, Progreso, Editar rutina y el selector de ejercicios se ve una silueta gris de la pantalla en vez de un círculo girando (paquete `skeletonizer`). Sigue el tema que se elija en Perfil.
+- Pantalla principal con barra de abajo: **Entrenar**, **Rutinas**, **Calendario**, **Progreso** y **Perfil**. Rutinas y Perfil están hechas; las otras tres son un texto hasta que se hagan sus pantallas.
+- **Mis rutinas**: lista las rutinas del usuario con su número de ejercicios (`GET /users/me/workouts`), crea una nueva con su nombre (`POST /users/me/workouts`) y borra las que ya no usa, pidiendo confirmación (`DELETE /users/me/workouts/:id`). Al tocar una se abre para **editarla**: cambiar el nombre, añadir ejercicios con el selector, elegir series y repeticiones, cambiar el orden arrastrando, quitar ejercicios y guardar (`PUT /users/me/workouts/:id`).
+- **Entrenar**: el botón de play propone las rutinas asignadas al día de hoy en el calendario y deja elegir otra rutina o empezar un entrenamiento vacío. En el entrenamiento se ven los ejercicios con lo previsto, se apuntan las series (repeticiones y peso), se pueden añadir ejercicios con el selector y, al finalizar, se guarda (`POST /users/me/sessions`). Cancelar pide confirmación y descarta el entrenamiento.
+- **Selector de ejercicios** (`ExercisePickerScreen`): elige un ejercicio del catálogo (`GET /exercises`) con buscador por nombre, filtro por categoría y carga de más ejercicios al llegar al final de la lista. Es solo de lectura y se abre desde la edición de una rutina (y, más adelante, desde un entrenamiento).
 
-## Cómo arrancarlo
-
-Hacen falta dos terminales: una para la API y otra para Flutter.
-
-**1. Backend (API)**
-
-```bash
-git clone https://github.com/elpunyal/EA-Seminari9-Flutter-API
-cd EA-Seminari9-Flutter-API
-npm install
-cp .env.example .env
-npm run seed
-npm run dev
-```
-
-La API queda disponible en `http://localhost:1337` (y en `http://10.0.2.2:1337` para emuladores Android).
-
-**2. Frontend (Flutter)**
-
-```bash
-git clone https://github.com/elpunyal/EA-Seminari9-Flutter
-cd EA-Seminari9-Flutter
-flutter pub get
-flutter run -d chrome   # Para probar directamente en el navegador
-# o
-flutter run             # Para probar en emulador Android/iOS o móvil conectado por USB
-```
-
-Si el proyecto no trae las carpetas de plataforma (`android/`, `ios/`, `web/`), se generan con:
-
-```bash
-flutter create --platforms=android,ios,web .
-```
-
-## Configuración de Red
-
-La URL de la API se gestiona automáticamente según la plataforma en `lib/config/environment.dart`:
-- En **Android Emulator**, redirige automáticamente a `http://10.0.2.2:1337`.
-- En **iOS Simulator, Web y escritorio**, utiliza `http://localhost:1337`.
-- Para usar otra dirección (por ejemplo, un móvil real en tu red): `flutter run --dart-define=API_URL=http://192.168.1.10:1337`.
-
-## Permisos nativos
-
-- **Android** (`android/app/src/main/AndroidManifest.xml`): permisos `INTERNET` y `CAMERA`, y `android:usesCleartextTraffic="true"` porque la API va por `http`.
-- **iOS** (`ios/Runner/Info.plist`): `NSCameraUsageDescription` y `NSPhotoLibraryUsageDescription`.
-
-## Estructura del proyecto
+## Estructura
 
 ```
 lib/
-├── main.dart                 punto de entrada: providers y rutas con nombre (GetX)
-├── config/environment.dart   URL de la API según la plataforma
-├── models/                   Author y Book (con fromJson y toJson)
-├── services/                 http_client, author_service, book_service, permissions_service
-├── providers/                BooksProvider y AuthorsProvider (estado de los datos, Provider)
-├── controllers/              estado de cada pantalla (GetX): formularios, detalles, buscador, pestañas y permisos
-├── utils/format.dart         formato de fechas, precios, removeEmpty...
-├── theme/app_colors.dart     colores de la app
-├── widgets/                  tarjetas, buscador, diálogos, campos...
-└── screens/                  las pantallas
+  config/environment.dart     URL de la API según la plataforma
+  models/user.dart            modelo User (fromJson / toJson)
+  models/workout.dart         modelos Exercise, WorkoutExercise y Workout
+  services/workout_service.dart  rutinas y ejercicios (rutas protegidas)
+  services/http_client.dart   función request() para llamar a la API (con token opcional)
+  services/auth_service.dart  login y registro
+  providers/auth_provider.dart  estado de la sesión (Provider)
+  screens/                    login, registro, principal y perfil
+  theme/app_colors.dart       colores
+  main.dart                   app, rutas (GetX) y AuthGate
 ```
 
-## Estado y navegación
+`AuthGate` enseña el login si no hay sesión y la pantalla principal si la hay; cambia sola al hacer login o logout.
 
-- **Provider** (`providers/`): guarda los libros y autores que vienen de la API y los comparten varias pantallas.
-- **GetX** (`controllers/`): guarda el estado de cada pantalla (`.obs` y `Obx`) y se encarga de las rutas, los diálogos y los avisos.
-- No se usa `setState` en ninguna pantalla.
+## Cómo arrancarlo
 
-## Rutas (GetX)
-
-| Ruta | Pantalla | Fichero |
-|---|---|---|
-| `/` | Pestañas: Libros, Autores, Permisos y Teoría | `screens/home_screen.dart` |
-| `/books/new` | Nuevo Libro | `screens/book_form_screen.dart` |
-| `/books/:id` | Detalle Libro | `screens/book_detail_screen.dart` |
-| `/books/:id/edit` | Editar Libro | `screens/book_form_screen.dart` |
-| `/authors/new` | Nuevo Autor | `screens/author_form_screen.dart` |
-| `/authors/:id` | Detalle Autor | `screens/author_detail_screen.dart` |
-| `/authors/:id/edit` | Editar Autor | `screens/author_form_screen.dart` |
-
-## Pantallas
-
-| Pantalla | Fichero | Descripción |
-|---|---|---|
-| Libros | `screens/books_screen.dart` | Catálogo de libros con buscador en tiempo real (título, ISBN, descripción, **editorial**), pull-to-refresh y vista lista/tarjetas. |
-| Nuevo / Editar Libro | `screens/book_form_screen.dart` | Formulario de libro con campo editorial (`publisher`), precarga al editar y selección de foto con cámara/galería (permisos nativos). |
-| Detalle Libro | `screens/book_detail_screen.dart` | Vista de detalle de portada grande, editorial, autores, tags y precio. |
-| Autores | `screens/authors_screen.dart` | Listado con buscador, pull-to-refresh, edición y diálogo de borrado. |
-| Nuevo / Editar Autor | `screens/author_form_screen.dart` | Formulario con roles, estado activo y foto de perfil. |
-| Detalle Autor | `screens/author_detail_screen.dart` | Información del autor, biografía y estado. |
-| Permisos Nativos | `screens/permissions_screen.dart` | Demostrador interactivo de permisos de Cámara y Galería (`permissions_service.dart`). |
-| Teoría & Comparativa | `screens/info_screen.dart` | 15 apartados de Flutter: multiplataforma, Dart, widgets, estado, rutas, renderizado, etc. |
-
-## Comprobar el proyecto
+Hace falta el backend arrancado (puerto 1337) y [Flutter](https://docs.flutter.dev/get-started/install) 3.x.
 
 ```bash
-flutter analyze   # busca errores en el código
-flutter test      # ejecuta los tests de formato y de serialización (fromJson / toJson)
+flutter pub get
+flutter run -d chrome   # en el navegador
+flutter run             # en emulador o móvil
 ```
+
+Usuario de prueba del seed del backend: `user@example.com` / `seminari7`.
+
+Para otra URL de la API: `flutter run --dart-define=API_URL=http://192.168.1.10:1337`
+
+El build de release que arma GitHub toma la URL de la variable `API_URL` del repo (Settings → Secrets and variables → Actions → pestaña Variables), por ejemplo `https://api.tudominio.com`, y la pasa con el mismo `--dart-define`. Si la variable falta, el build se corta: un release sin ella apuntaría a `10.0.2.2` o a `localhost`.
+
+## Linter y hook de Git
+
+El linter es el de Dart: `flutter analyze` (con las reglas de `flutter_lints`, en `analysis_options.yaml`).
+
+Hay un hook de Git (`.githooks/pre-commit`) que lo pasa antes de cada `git commit` y cancela el commit si encuentra problemas.
+Como esta app no usa npm, el hook se activa una sola vez en cada clon:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Se puede saltar una vez con `git commit --no-verify`, pero lo normal es arreglar el aviso.
+
+## Token
+
+El access token del backend dura 15 minutos. Las pantallas que llamen a rutas protegidas tienen que usar `AuthProvider.authorizedRequest()`: si la API responde 401, pide un token nuevo con `POST /auth/refresh` y repite la petición; si el refresh token también ha caducado, cierra la sesión y la app vuelve al login.
+
+## Pendiente
+
+- Editar el perfil: la API todavía no deja que un usuario edite sus datos.

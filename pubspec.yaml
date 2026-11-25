@@ -1,5 +1,5 @@
-name: ea_seminari9_flutter
-description: Backoffice de autores y libros hecho en Flutter (migrado desde React Native).
+name: app_spotter
+description: App móvil de Spotter, para registrar rutinas y entrenamientos.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -10,13 +10,22 @@ dependencies:
   flutter:
     sdk: flutter
   # http: sustituye al fetch de React Native
+  flutter_secure_storage: ^11.2.0
+  # form_builder_validators: las reglas de validación ya hechas (obligatorio, email, mínimo de caracteres)
+  form_builder_validators: 11.3.0
   get: ^4.7.3
   http: ^1.2.0
-  # image_picker: sustituye a expo-image-picker (cámara y galería)
-  image_picker: ^1.1.0
-  # permission_handler: para pedir permisos y ver su estado (como usePermissions.ts)
-  permission_handler: ^11.3.0
+  # infinite_scroll_pagination: la lista que carga más al hacer scroll (selector de ejercicios)
+  infinite_scroll_pagination: 6.0.0
+  # intl: dar formato a los pesos y a las fechas igual en toda la app
+  intl: 0.20.3
   provider: ^6.1.5+1
+  # regex_ui: el indicador de fortaleza de la contraseña y la lista de lo que le falta
+  regex_ui: 1.1.1
+  shared_preferences: ^2.2.0
+  # skeletonizer: el esqueleto gris que se ve mientras cargan los datos de una pantalla
+  skeletonizer: 3.0.0
+  socket_io_client: ^3.1.6
 
 dev_dependencies:
   flutter_test:
