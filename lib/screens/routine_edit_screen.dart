@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -28,6 +29,9 @@ class RoutineEditScreen extends StatefulWidget {
 }
 
 class _RoutineEditScreenState extends State<RoutineEditScreen> {
+  // Sirve para comprobar las reglas del formulario (de momento, que el nombre no esté vacío)
+  final _formKey = GlobalKey<FormState>();
+
   // Controla el texto del campo del nombre
   final _nameController = TextEditingController();
 
@@ -97,11 +101,10 @@ class _RoutineEditScreenState extends State<RoutineEditScreen> {
 
   // Guarda la rutina (PUT /users/me/workouts/:id) con el nombre, los ejercicios y su orden
   Future<void> _save() async {
+    // Si el nombre no vale, el campo dice qué falta y no se guarda nada
+    if (!_formKey.currentState!.validate()) return;
+
     final name = _nameController.text.trim();
-    if (name.isEmpty) {
-      setState(() => _error = 'La rutina necesita un nombre');
-      return;
-    }
 
     final auth = context.read<AuthProvider>();
     setState(() {
@@ -131,48 +134,52 @@ class _RoutineEditScreenState extends State<RoutineEditScreen> {
       appBar: AppBar(title: const Text('Editar rutina')),
       body: Skeletonizer(
         enabled: _loading,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(_error!, style: const TextStyle(color: AppColors.danger)),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(_error!, style: const TextStyle(color: AppColors.danger)),
+                ),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
+                validator: FormBuilderValidators.required(errorText: 'Escribe el nombre de la rutina'),
               ),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 24),
-            const Text('Ejercicios', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            if (rows.isEmpty) const Text('Esta rutina no tiene ejercicios. Añade el primero.'),
-            // Lista que se puede reordenar arrastrando. Va dentro de otra lista, por eso
-            // shrinkWrap (ocupa solo lo que necesita) y sin scroll propio
-            ReorderableListView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false,
-              // onReorder está marcado como obsoleto en las versiones más nuevas de Flutter (se sustituye por
-              // onReorderItem), pero onReorderItem no existe en las anteriores y la app no compilaría en ellas
-              // ignore: deprecated_member_use
-              onReorder: _reorder,
-              children: [
-                for (var i = 0; i < rows.length; i++) _buildRow(rows[i], i),
-              ],
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: _addExercise,
-              icon: const Icon(Icons.add),
-              label: const Text('Añadir ejercicio'),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              child: Text(_saving ? 'Guardando…' : 'Guardar cambios'),
-            ),
-          ],
+              const SizedBox(height: 24),
+              const Text('Ejercicios', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              if (rows.isEmpty) const Text('Esta rutina no tiene ejercicios. Añade el primero.'),
+              // Lista que se puede reordenar arrastrando. Va dentro de otra lista, por eso
+              // shrinkWrap (ocupa solo lo que necesita) y sin scroll propio
+              ReorderableListView(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false,
+                // onReorder está marcado como obsoleto en las versiones más nuevas de Flutter (se sustituye por
+                // onReorderItem), pero onReorderItem no existe en las anteriores y la app no compilaría en ellas
+                // ignore: deprecated_member_use
+                onReorder: _reorder,
+                children: [
+                  for (var i = 0; i < rows.length; i++) _buildRow(rows[i], i),
+                ],
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _addExercise,
+                icon: const Icon(Icons.add),
+                label: const Text('Añadir ejercicio'),
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: _saving ? null : _save,
+                child: Text(_saving ? 'Guardando…' : 'Guardar cambios'),
+              ),
+            ],
+          ),
         ),
       ),
     );
